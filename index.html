@@ -246,6 +246,7 @@ window.__streetStart = function (THREE) {
     mode: "post",
     offerType: "next7",
     coverId: null,
+    showBets: false,
     chips: [],
     undo: [],
     charging: false,
@@ -255,6 +256,7 @@ window.__streetStart = function (THREE) {
   var scene = null;
   var saveTimer = null;
     var throwing = false;
+    var holdTimer = null;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -531,7 +533,7 @@ window.__streetStart = function (THREE) {
   function renderTray() {
     var p = me();
     var tray = $("tray");
-    if (ui.screen !== "play" || !p) { tray.innerHTML = ""; return; }
+    if (ui.screen !== "play" || !p) { stopHold(); tray.innerHTML = ""; return; }
     if (throwing || state.busy) {
       tray.innerHTML = '<div class="who"><strong>' + p.name + "</strong> · dice are in the air</div>";
       return;
@@ -540,6 +542,16 @@ window.__streetStart = function (THREE) {
       return !SD.BET_TYPES[t].needsPoint || state.phase === "point";
     });
     var open = state.bets.filter(function (b) { return b.status === "open"; });
+    if (canThisPlayerRoll() && !ui.showBets) {
+      tray.innerHTML = '<div class="who"><strong>' + p.name + "</strong> · " + money(p.bankroll) + ' · shooter</div>' +
+        '<div class="hint">Line is faded. Flick the alley or hold the bar. Dice land on a number the curb already picked.</div>' +
+        '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>' +
+        '<div class="row"><button class="ghost" id="moreBetBtn">More side action</button><button class="ghost" id="passBtn">Pass phone</button></div>';
+      bindThrowGrip($("throwGrip"));
+      $("moreBetBtn").onclick = function () { ui.showBets = true; renderTray(); };
+      $("passBtn").onclick = function () { openPicker("Pass the phone to the next set of hands."); };
+      return;
+    }
     var html = '<div class="who"><strong>' + p.name + "</strong> · " + money(p.bankroll) +
       (p.id === state.shooterId ? " · shooter" : "") + "</div>";
     html += '<div class="pending">' + (pending() ? "Wager " + money(pending()) : "No chips in hand") + "</div>";
@@ -573,6 +585,7 @@ window.__streetStart = function (THREE) {
     html += '<div class="row"><button id="undoBtn">Undo</button><button class="primary" id="confirmBtn">Confirm</button><button class="ghost" id="passBtn">Pass phone</button></div>';
     if (canThisPlayerRoll()) {
       html += '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>';
+      html += '<div class="row"><button class="ghost" id="hideBetBtn">Hide chips</button></div>';
     } else if (p.id === state.shooterId && state.line.amount && SD.lineRemaining(state) > 0) {
       html += '<div class="row"><button id="cutBtn">Cut extra</button><button id="pullBtn">Pull line</button></div>';
     }
@@ -607,21 +620,35 @@ window.__streetStart = function (THREE) {
     if ($("cutBtn")) $("cutBtn").onclick = function () { apply(SD.cutLine(state, p.id)); };
     if ($("pullBtn")) $("pullBtn").onclick = function () { apply(SD.pullLine(state, p.id)); };
     if ($("throwGrip")) bindThrowGrip($("throwGrip"));
+    if ($("hideBetBtn")) $("hideBetBtn").onclick = function () { ui.showBets = false; renderTray(); };
+  }
+
+  function stopHold() {
+    clearTimeout(holdTimer);
+    holdTimer = null;
   }
 
   function bindHold(el, fn) {
-    var t = null;
+    var ignoreClick = false;
     var start = function (e) {
       e.preventDefault();
+      ignoreClick = true;
+      stopHold();
       fn();
-      t = setTimeout(function rep() { fn(); t = setTimeout(rep, 110); }, 360);
+      var rep = function () { fn(); holdTimer = setTimeout(rep, 110); };
+      holdTimer = setTimeout(rep, 360);
     };
-    var stop = function () { clearTimeout(t); t = null; };
     el.addEventListener("pointerdown", start);
-    el.addEventListener("pointerup", stop);
-    el.addEventListener("pointerleave", stop);
-    el.addEventListener("pointercancel", stop);
+    el.addEventListener("click", function () {
+      if (ignoreClick) { ignoreClick = false; return; }
+      fn();
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) {
+      el.addEventListener(ev, stopHold);
+    });
   }
+  window.addEventListener("pointerup", stopHold);
+  window.addEventListener("pointercancel", stopHold);
 
   function bindThrowGrip(el) {
     var startT = 0;
@@ -847,12 +874,12 @@ window.__streetStart = function (THREE) {
     scene3.background = new THREE.Color(0x141210);
     scene3.fog = new THREE.Fog(0x141210, 10, 22);
     var camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 40);
-    camera.position.set(0, 4.6, 7.2);
-    camera.lookAt(0, 0.3, -0.6);
+    camera.position.set(0, 5.8, 5.4);
+    camera.lookAt(0, 0.05, -0.4);
 
-    scene3.add(new THREE.HemisphereLight(0xc8d4e8, 0x2a2018, 0.7));
-    var sun = new THREE.DirectionalLight(0xffe2b0, 0.85);
-    sun.position.set(-3, 8, 4);
+    scene3.add(new THREE.HemisphereLight(0xe8d8c0, 0x3a2a20, 1.05));
+    var sun = new THREE.DirectionalLight(0xffe2b0, 1.15);
+    sun.position.set(-2.2, 7, 3);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     scene3.add(sun);
@@ -870,27 +897,27 @@ window.__streetStart = function (THREE) {
     }
 
     var asphalt = canvasTex(function (ctx, s) {
-      ctx.fillStyle = "#2a2924";
+      ctx.fillStyle = "#4a453c";
       ctx.fillRect(0, 0, s, s);
-      for (var i = 0; i < 2400; i++) {
-        ctx.fillStyle = "rgba(" + (20 + ((i * 17) % 40)) + "," + (18 + ((i * 13) % 36)) + "," + (14 + ((i * 11) % 30)) + "," + (0.15 + (i % 5) * 0.05) + ")";
-        ctx.fillRect((i * 47) % s, (i * 31) % s, 2, 2);
+      for (var i = 0; i < 3200; i++) {
+        ctx.fillStyle = "rgba(" + (40 + ((i * 17) % 50)) + "," + (36 + ((i * 13) % 44)) + "," + (28 + ((i * 11) % 36)) + "," + (0.18 + (i % 5) * 0.06) + ")";
+        ctx.fillRect((i * 47) % s, (i * 31) % s, 3, 2);
       }
-      ctx.strokeStyle = "rgba(243,239,227,0.28)";
-      ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.arc(s * 0.5, s * 0.62, 54, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = "rgba(243,239,227,0.55)";
-      ctx.font = "bold 42px sans-serif";
+      ctx.strokeStyle = "rgba(243,239,227,0.45)";
+      ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.arc(s * 0.5, s * 0.58, 58, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "rgba(246,241,230,0.78)";
+      ctx.font = "bold 46px sans-serif";
       ctx.textAlign = "center";
       [4, 5, 6, 8, 9, 10].forEach(function (n, i) {
         ctx.save();
-        ctx.translate(70 + i * 64, 150);
+        ctx.translate(78 + i * 62, 200);
         ctx.rotate((i % 2 ? 0.08 : -0.08));
         ctx.fillText(String(n), 0, 0);
         ctx.restore();
       });
-      ctx.fillText("C", 150, 230);
-      ctx.fillText("E", 360, 230);
+      ctx.fillText("C", 160, 280);
+      ctx.fillText("E", 350, 280);
     }, 512);
     asphalt.wrapS = asphalt.wrapT = THREE.RepeatWrapping;
 
@@ -911,14 +938,21 @@ window.__streetStart = function (THREE) {
     }, 256);
     brick.wrapS = brick.wrapT = THREE.RepeatWrapping;
     brick.repeat.set(3, 2);
-    var wall = new THREE.Mesh(new THREE.BoxGeometry(12, 3.2, 0.4), new THREE.MeshStandardMaterial({ map: brick, roughness: 0.85 }));
-    wall.position.set(0, 1.6, -5.1);
+    var wall = new THREE.Mesh(new THREE.BoxGeometry(14, 3.4, 0.45), new THREE.MeshStandardMaterial({ map: brick, roughness: 0.85 }));
+    wall.position.set(0, 1.7, -5.3);
     wall.castShadow = true;
     wall.receiveShadow = true;
     scene3.add(wall);
 
-    var curb = new THREE.Mesh(new THREE.BoxGeometry(12, 0.28, 0.7), new THREE.MeshStandardMaterial({ color: 0xcfc6b3, roughness: 0.8 }));
-    curb.position.set(0, 0.14, 3.15);
+    var walk = new THREE.Mesh(new THREE.BoxGeometry(16, 0.08, 4.2), new THREE.MeshStandardMaterial({ color: 0xb7b09e, roughness: 0.9 }));
+    walk.position.set(0, -0.02, 4.3);
+    walk.receiveShadow = true;
+    scene3.add(walk);
+    var curb = new THREE.Mesh(new THREE.BoxGeometry(14, 0.38, 0.7), new THREE.MeshStandardMaterial({ color: 0xe2d8c4, roughness: 0.72 }));
+    curb.position.set(0, 0.18, 2.15);
+    var curbPaint = new THREE.Mesh(new THREE.BoxGeometry(14, 0.03, 0.16), new THREE.MeshStandardMaterial({ color: 0x222222 }));
+    curbPaint.position.set(0, 0.38, 2.15);
+    scene3.add(curbPaint);
     curb.castShadow = true;
     scene3.add(curb);
 
@@ -934,8 +968,8 @@ window.__streetStart = function (THREE) {
       while (cash.children.length) cash.remove(cash.children[0]);
       var n = amount <= 0 ? 0 : Math.min(10, 2 + Math.floor(amount / 12));
       for (var i = 0; i < n; i++) {
-        var bill = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.2), new THREE.MeshStandardMaterial({ color: 0x3f7a52 }));
-        bill.position.set((i % 3) * 0.08 - 0.08, 0.02 * i, (i % 2) * 0.05);
+        var bill = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.03, 0.3), new THREE.MeshStandardMaterial({ color: 0x3f7a52 }));
+        bill.position.set((i % 3) * 0.12 - 0.12, 0.03 * i, (i % 2) * 0.08);
         bill.rotation.y = (i * 0.18) - 0.3;
         bill.castShadow = true;
         cash.add(bill);
@@ -998,8 +1032,8 @@ window.__streetStart = function (THREE) {
     }
 
     function park(a, b) {
-      dieA.position.set(-0.38, 0.22, 1.4);
-      dieB.position.set(0.38, 0.22, 1.4);
+      dieA.position.set(-0.42, 0.22, 0.95);
+      dieB.position.set(0.42, 0.22, 1.15);
       dieA.quaternion.copy(faceUp(a || 1, -0.2));
       dieB.quaternion.copy(faceUp(b || 1, 0.25));
     }
@@ -1028,7 +1062,7 @@ window.__streetStart = function (THREE) {
     }
 
     function body(mesh, x, pwr, face, twist) {
-      mesh.position.set(x, 0.55, 2.6);
+      mesh.position.set(x, 0.55, 1.85);
       return {
         mesh: mesh,
         pos: mesh.position.clone(),
@@ -1067,15 +1101,15 @@ window.__streetStart = function (THREE) {
             snd("clack");
           }
         }
-        if (d.pos.z < -4.7) {
-          d.pos.z = -4.7;
+        if (d.pos.z < -4.85) {
+          d.pos.z = -4.85;
           d.vel.z *= -0.52;
           d.spin.x += 6;
           d.bounced = true;
           snd("clack");
           haptic(16);
         }
-        if (d.pos.z > 2.85) { d.pos.z = 2.85; d.vel.z *= -0.4; }
+        if (d.pos.z > 2.0) { d.pos.z = 2.0; d.vel.z *= -0.45; }
         if (d.pos.x > 2.3) { d.pos.x = 2.3; d.vel.x *= -0.5; }
         if (d.pos.x < -2.3) { d.pos.x = -2.3; d.vel.x *= -0.5; }
         d.mesh.position.copy(d.pos);
