@@ -254,7 +254,7 @@ window.__streetStart = function (THREE) {
   var audio = { ctx: null, muted: false };
   var scene = null;
   var saveTimer = null;
-  var holdRepeat = null;
+    var throwing = false;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -447,21 +447,29 @@ window.__streetStart = function (THREE) {
   }
 
   function decideAndThrow(power) {
-    if (!canThisPlayerRoll()) return;
+    if (!canThisPlayerRoll() || throwing) return;
     var dice = SD.rollDice();
+    throwing = true;
     apply(SD.setBusy(state, true));
     ui.undo = [];
     haptic([12, 28, 12]);
     snd("rattle");
+    renderTray();
     scene.throw(dice[0], dice[1], power || 1, function () {
       var res = SD.settleRoll(state, dice[0], dice[1]);
-      if (!res.ok) { apply(SD.setBusy(state, false)); toast(res.error); return; }
+      if (!res.ok) {
+        throwing = false;
+        apply(SD.setBusy(state, false));
+        toast(res.error);
+        return;
+      }
       state = res.state;
       save();
       var r = res.settlement.result;
       if (r === "natural" || r === "hit") { snd("win"); haptic([10, 40, 10]); }
       else if (r === "craps" || r === "seven-out") { snd("lose"); haptic(40); }
       else snd("clack");
+      throwing = false;
       ui.screen = "payout";
       render();
       if (scene.sync) scene.sync(state);
@@ -524,6 +532,10 @@ window.__streetStart = function (THREE) {
     var p = me();
     var tray = $("tray");
     if (ui.screen !== "play" || !p) { tray.innerHTML = ""; return; }
+    if (throwing || state.busy) {
+      tray.innerHTML = '<div class="who"><strong>' + p.name + "</strong> · dice are in the air</div>";
+      return;
+    }
     var types = Object.keys(SD.BET_TYPES).filter(function (t) {
       return !SD.BET_TYPES[t].needsPoint || state.phase === "point";
     });
