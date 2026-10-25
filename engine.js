@@ -483,6 +483,100 @@
     return ok(state, { refunded: pulled });
   }
 
+  function unpostLine(state, playerId, amount) {
+    state = clone(state);
+    if (state.busy) return fail(state, "Dice are in the air.");
+    if (state.phase !== "comeout") return fail(state, "Line's locked once the point is up.");
+    if (playerId !== state.shooterId) return fail(state, "Only the shooter can take chips back off the line.");
+    var max = lineRemaining(state);
+    if (max <= 0) return fail(state, "That piece is already faded.");
+    amount = intAmt(amount);
+    if (amount === null || amount <= 0) amount = max;
+    var take = Math.min(amount, max);
+    state.line.amount -= take;
+    credit(shooter(state), take);
+    return ok(state, { refunded: take });
+  }
+
+  function unfadeLine(state, playerId, amount) {
+    state = clone(state);
+    if (state.busy) return fail(state, "Dice are in the air.");
+    var p = player(state, playerId);
+    if (!p) return fail(state, "Who's taking the fade back?");
+    var found = null;
+    var idx = -1;
+    for (var i = 0; i < state.line.covers.length; i++) {
+      if (state.line.covers[i].playerId === p.id) {
+        found = state.line.covers[i];
+        idx = i;
+      }
+    }
+    if (!found) return fail(state, "You don't have a fade down.");
+    amount = intAmt(amount);
+    if (amount === null || amount <= 0) amount = found.amount;
+    var take = Math.min(amount, found.amount);
+    found.amount -= take;
+    if (found.amount <= 0) state.line.covers.splice(idx, 1);
+    credit(p, take);
+    return ok(state, { refunded: take });
+  }
+
+  function uncoverBet(state, betId, playerId, amount) {
+    state = clone(state);
+    if (state.busy) return fail(state, "Dice are in the air.");
+    var bet = null;
+    for (var i = 0; i < state.bets.length; i++) {
+      if (state.bets[i].id === betId) bet = state.bets[i];
+    }
+    if (!bet) return fail(state, "That ticket's gone.");
+    var p = player(state, playerId);
+    if (!p) return fail(state, "Who's uncovering?");
+    var found = null;
+    var idx = -1;
+    for (var c = 0; c < bet.covers.length; c++) {
+      if (bet.covers[c].playerId === p.id) {
+        found = bet.covers[c];
+        idx = c;
+      }
+    }
+    if (!found) return fail(state, "You didn't fade that ticket.");
+    amount = intAmt(amount);
+    if (amount === null || amount <= 0) amount = found.amount;
+    var take = Math.min(amount, found.amount);
+    found.amount -= take;
+    if (found.amount <= 0) bet.covers.splice(idx, 1);
+    var filled = 0;
+    for (var k = 0; k < bet.covers.length; k++) filled += bet.covers[k].amount;
+    if (filled < bet.coverNeeded) bet.status = "open";
+    credit(p, take);
+    return ok(state, { refunded: take });
+  }
+
+  function tableExposure(state) {
+    var out = [];
+    var i;
+    var c;
+    var b;
+    for (i = 0; i < state.players.length; i++) {
+      var p = state.players[i];
+      var row = { id: p.id, name: p.name, color: p.color, bankroll: p.bankroll, line: 0, fade: 0, room: 0, onTable: 0 };
+      if (p.id === state.shooterId) row.line = state.line.amount;
+      for (c = 0; c < state.line.covers.length; c++) {
+        if (state.line.covers[c].playerId === p.id) row.fade += state.line.covers[c].amount;
+      }
+      for (b = 0; b < state.bets.length; b++) {
+        var bet = state.bets[b];
+        if (bet.fromId === p.id) row.room += bet.stake - bet.refundedStake;
+        for (c = 0; c < bet.covers.length; c++) {
+          if (bet.covers[c].playerId === p.id) row.room += bet.covers[c].amount;
+        }
+      }
+      row.onTable = row.line + row.fade + row.room;
+      out.push(row);
+    }
+    return out;
+  }
+
   function offerBet(state, fromId, type, stake) {
     state = clone(state);
     if (state.busy) return fail(state, "Dice are in the air.");
@@ -892,10 +986,15 @@
     addPlayer: addPlayer,
     removePlayer: removePlayer,
     rebuy: rebuy,
+    COLORS: COLORS.slice(),
     postLine: postLine,
     fadeLine: fadeLine,
     cutLine: cutLine,
     pullLine: pullLine,
+    unpostLine: unpostLine,
+    unfadeLine: unfadeLine,
+    uncoverBet: uncoverBet,
+    tableExposure: tableExposure,
     offerBet: offerBet,
     coverBet: coverBet,
     cancelBet: cancelBet,

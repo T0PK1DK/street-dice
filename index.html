@@ -3,536 +3,218 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1b1a17">
-<title>Street Dice — curb game</title>
+<meta name="theme-color" content="#161412">
+<title>Street Dice — pass the phone</title>
 <style>
   :root {
-    --asphalt: #1c1b18;
-    --asphalt-2: #26241f;
-    --curb: #cfc6b3;
-    --curb-shadow: #8c8372;
-    --brick: #6b3228;
-    --brick-2: #4d221c;
-    --mortar: #c9b49a;
-    --chalk: #f3efe3;
-    --gold: #e8c36a;
-    --mint: #9ad0a0;
-    --sky: #7ec8e3;
-    --coral: #f0a07a;
     --ink: #f6f1e6;
     --muted: #b7b0a2;
-    --danger: #e37a6d;
+    --gold: #e8c36a;
     --ok: #8fd19a;
-    --panel: rgba(12, 11, 9, 0.72);
-    --line: rgba(243, 239, 227, 0.12);
-    --tap: 48px;
-    --safe-b: env(safe-area-inset-bottom, 12px);
+    --bad: #e37a6d;
+    --panel: rgba(12, 10, 8, 0.78);
+    --line: rgba(243, 239, 227, 0.14);
+    --tap: 52px;
     --safe-t: env(safe-area-inset-top, 8px);
+    --safe-b: env(safe-area-inset-bottom, 10px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { min-height: 100%; }
-  body {
-    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: var(--ink);
-    background:
-      radial-gradient(1200px 600px at 50% -10%, rgba(232, 195, 106, 0.08), transparent 50%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 4px),
-      repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 6px),
-      linear-gradient(180deg, #161512, var(--asphalt));
-    overflow-x: hidden;
-  }
-  button, input {
-    font: inherit;
-    color: inherit;
-  }
+  html, body { height: 100%; background: #12100d; color: var(--ink); font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+  button, input { font: inherit; color: inherit; }
   button {
     min-height: var(--tap);
     border: 0;
-    border-radius: 14px;
-    background: #3a352c;
-    color: var(--ink);
+    border-radius: 16px;
+    background: #3a3429;
     padding: 0 14px;
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
-  button:hover { filter: brightness(1.08); }
-  button:disabled { opacity: 0.38; cursor: not-allowed; filter: none; }
-  button.primary {
-    background: linear-gradient(180deg, #f0d27a, #d7a83a);
-    color: #231b0c;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-  }
+  button:disabled { opacity: 0.38; }
+  button.primary { background: linear-gradient(180deg, #f0d27a, #d7a83a); color: #231b0c; font-weight: 800; }
   button.ghost { background: transparent; border: 1px solid var(--line); }
   button.warn { background: #5a2d28; }
-  .app {
-    width: min(980px, 100%);
-    margin: 0 auto;
-    padding: calc(var(--safe-t) + 8px) 12px calc(var(--safe-b) + 16px);
-    display: grid;
-    gap: 10px;
+  button.on { outline: 2px solid var(--gold); }
+  #view { position: fixed; inset: 0; }
+  #view canvas, #fallback2d { width: 100%; height: 100%; display: block; }
+  #fallback2d {
+    background:
+      linear-gradient(#5a3228 0 68px, transparent 68px),
+      repeating-linear-gradient(90deg, #2a281f 0 2px, #1d1b16 2px 8px),
+      #1d1b16;
   }
+  #fallback2d .wall { height: 68px; background: repeating-linear-gradient(90deg, #6b3228 0 36px, #c9b49a 36px 39px); }
+  #fallback2d .alley { position: relative; height: calc(100% - 68px); }
+  #fallback2d .curb { position: absolute; bottom: 28%; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #cfc6b3 0 18px, #111 18px 28px); }
+  #fallback2d .dice-box { position: absolute; left: 50%; top: 28%; transform: translateX(-50%); display: flex; gap: 22px; perspective: 600px; }
+  .cube { width: 58px; height: 58px; position: relative; transform-style: preserve-3d; }
+  .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a2218; margin: auto; }
+  .f1 { transform: rotateY(0) translateZ(29px); }
+  .f6 { transform: rotateY(180deg) translateZ(29px); }
+  .f3 { transform: rotateY(90deg) translateZ(29px); }
+  .f4 { transform: rotateY(-90deg) translateZ(29px); }
+  .f2 { transform: rotateX(90deg) translateZ(29px); }
+  .f5 { transform: rotateX(-90deg) translateZ(29px); }
+  .hud { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+  .hud > * { pointer-events: auto; }
   header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: calc(var(--safe-t) + 6px) 10px 6px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.55), transparent);
   }
-  .brand .tag {
-    display: block;
-    font-size: 0.68rem;
-    letter-spacing: 0.22em;
-    color: var(--gold);
-    opacity: 0.85;
+  .tag { display: block; font-size: 0.64rem; letter-spacing: 0.2em; color: var(--gold); }
+  h1 { font-size: 1.15rem; letter-spacing: 0.08em; }
+  .iconrow { display: flex; gap: 6px; }
+  .iconrow button { min-width: 46px; min-height: 46px; }
+  .banner {
+    margin: 0 10px;
+    background: var(--panel);
+    border: 1px dashed rgba(243,239,227,0.25);
+    border-radius: 14px;
+    padding: 8px 12px;
   }
-  h1 {
-    font-size: 1.45rem;
-    letter-spacing: 0.08em;
-    text-shadow: 0 2px 0 #000, 0 0 18px rgba(232,195,106,0.2);
+  .banner.point { border-color: rgba(232,195,106,0.5); }
+  .banner b { letter-spacing: 0.1em; }
+  .banner span { display: block; color: var(--muted); font-size: 0.86rem; }
+  .crew {
+    display: flex; gap: 6px; overflow-x: auto; padding: 8px 10px 0;
   }
-  .header-actions { display: flex; gap: 6px; }
-  .header-actions button { min-width: var(--tap); padding: 0 10px; }
-
-  .phase-banner {
-    border: 1px dashed rgba(243,239,227,0.28);
-    background: rgba(0,0,0,0.35);
-    border-radius: 16px;
-    padding: 10px 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-  }
-  .phase-banner.point { border-color: rgba(232,195,106,0.55); box-shadow: inset 0 0 24px rgba(232,195,106,0.08); }
-  .phase-name {
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-  }
-  .phase-detail { font-size: 0.9rem; color: var(--muted); text-align: right; }
-
-  .table {
-    position: relative;
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 18px 50px rgba(0,0,0,0.45);
-    background: #2a281f;
-  }
-  .wall {
-    height: 58px;
-    background:
-      repeating-linear-gradient(90deg, var(--brick) 0 38px, var(--mortar) 38px 41px),
-      var(--brick-2);
-    background-size: 41px 22px, auto;
-    box-shadow: inset 0 -10px 16px rgba(0,0,0,0.35);
-    position: relative;
-  }
-  .wall::after {
-    content: "THROW AT THE WALL";
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.68rem;
-    letter-spacing: 0.28em;
-    color: rgba(243,239,227,0.32);
-  }
-  .alley {
-    min-height: 250px;
-    padding: 8px 12px 14px;
-    background:
-      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.05), transparent 46%),
-      repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 5px),
-      linear-gradient(180deg, #3a372f 0%, #2a281f 40%, #1f1d18 100%);
-    position: relative;
-  }
-  .dice-stage {
-    height: 132px;
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 22px;
-    perspective: 700px;
-    transform-style: preserve-3d;
-  }
-  .scene {
-    width: 64px;
-    height: 64px;
-    perspective: 500px;
-  }
-  .cube {
-    width: 64px;
-    height: 64px;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.7s cubic-bezier(.2,.7,.2,1);
-  }
-  .face {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(160deg, #fffaf0, #e6dfd0);
-    border-radius: 10px;
-    box-shadow: inset 0 0 0 2px #d7cbb4, 0 8px 14px rgba(0,0,0,0.35);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+  .seat {
+    min-width: 108px; text-align: left; background: var(--panel); border: 1px solid var(--line);
     padding: 8px;
-    backface-visibility: hidden;
   }
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #2a2218;
-    margin: auto;
-    box-shadow: inset 0 1px 1px #000;
-  }
-  .f1 { transform: rotateY(0deg) translateZ(32px); }
-  .f6 { transform: rotateY(180deg) translateZ(32px); }
-  .f3 { transform: rotateY(90deg) translateZ(32px); }
-  .f4 { transform: rotateY(-90deg) translateZ(32px); }
-  .f2 { transform: rotateX(90deg) translateZ(32px); }
-  .f5 { transform: rotateX(-90deg) translateZ(32px); }
-  .curb {
-    height: 16px;
-    margin: 6px -12px 10px;
-    background:
-      repeating-linear-gradient(90deg, var(--curb) 0 18px, #111 18px 28px),
-      var(--curb);
-    box-shadow: 0 6px 0 var(--curb-shadow);
-  }
-  .chalk {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  .chalk span {
-    flex: 1;
-    text-align: center;
-    font-size: 1.05rem;
-    letter-spacing: 0.06em;
-    color: rgba(243,239,227,0.55);
-    text-shadow: 0 0 1px #fff, 1px 1px 0 rgba(0,0,0,0.4);
-    transform: rotate(var(--tilt, -2deg));
-    border-bottom: 1px solid transparent;
-    padding-bottom: 2px;
-  }
-  .chalk span.on {
-    color: var(--gold);
-    border-bottom-color: var(--gold);
-    text-shadow: 0 0 10px rgba(232,195,106,0.5);
-  }
-  .pot {
-    background: rgba(0,0,0,0.38);
-    border: 1px dashed rgba(232,195,106,0.28);
-    border-radius: 16px;
-    padding: 10px;
-    text-align: center;
-  }
-  .pot-label { font-size: 0.72rem; letter-spacing: 0.16em; color: var(--gold); }
-  .pot-amt { font-size: 1.8rem; font-weight: 800; }
-  .bills {
-    height: 54px;
-    position: relative;
-    margin: 6px auto 4px;
-    width: min(280px, 90%);
-  }
-  .bill {
-    position: absolute;
-    left: 50%;
-    width: 72px;
-    height: 36px;
-    border-radius: 4px;
-    background: linear-gradient(180deg, #6ea57a, #3f7a52);
-    border: 1px solid #cfe8d4;
-    color: #eef8f0;
-    font-size: 0.7rem;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.35);
-    transform: translateX(-50%) rotate(var(--r)) translate(var(--x), var(--y));
-  }
-  .cover-line { font-size: 0.86rem; color: var(--muted); min-height: 1.2em; }
-
-  .settlement {
+  .seat.me { outline: 2px solid var(--gold); }
+  .seat .nm { font-weight: 700; font-size: 0.88rem; }
+  .seat .stk { color: var(--gold); }
+  .seat .on { font-size: 0.72rem; color: var(--muted); }
+  .grow { flex: 1; pointer-events: none !important; }
+  .tray {
     background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 10px 12px;
-  }
-  .settlement h2 { font-size: 1rem; margin-bottom: 6px; }
-  .settlement .row { font-size: 0.88rem; margin: 3px 0; color: var(--muted); }
-  .settlement .row.win { color: var(--ok); }
-  .settlement .row.lose { color: var(--danger); }
-  .empty { color: var(--muted); font-size: 0.88rem; }
-
-  .players {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .player {
-    text-align: left;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 10px;
-    min-height: 74px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .player.acting { outline: 2px solid var(--gold); }
-  .player .who { font-weight: 700; display: flex; justify-content: space-between; gap: 6px; }
-  .player .stack { font-size: 1.15rem; color: var(--gold); }
-  .badge {
-    display: inline-block;
-    font-size: 0.64rem;
-    letter-spacing: 0.08em;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: #3d3424;
-    color: var(--gold);
-  }
-  .delta.up { color: var(--ok); }
-  .delta.down { color: var(--danger); }
-
-  .actions {
-    background: rgba(10,9,7,0.55);
-    border-radius: 18px;
-    padding: 10px;
-    display: grid;
-    gap: 8px;
-  }
-  .acting-hint { font-size: 0.82rem; color: var(--muted); }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chips button, .chips input {
-    min-height: 44px;
-    border-radius: 999px;
-    background: #2d291f;
-    border: 1px solid var(--line);
-    padding: 0 12px;
-  }
-  .chips button.on { background: var(--gold); color: #231b0c; font-weight: 800; }
-  .chips input { width: 86px; }
-  .preview { font-size: 0.86rem; color: var(--sky); min-height: 1.3em; }
-  .act-row, .room-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .act-row button, .room-row button { flex: 1; min-width: 96px; }
-  #rollBtn { width: 100%; min-height: 56px; font-size: 1.15rem; }
-
-  .board {
-    display: grid;
-    gap: 8px;
-  }
-  .card {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 10px 12px;
-  }
-  .card h3 {
-    font-size: 0.72rem;
-    letter-spacing: 0.16em;
-    color: var(--gold);
-    margin-bottom: 6px;
-  }
-  .bet {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    align-items: center;
-    padding: 8px 0;
     border-top: 1px solid var(--line);
-    font-size: 0.9rem;
+    padding: 8px 10px calc(var(--safe-b) + 8px);
   }
-  .bet:first-of-type { border-top: 0; }
-  .history {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
+  .who { font-size: 0.92rem; margin-bottom: 6px; }
+  .pending { min-height: 1.2em; color: var(--gold); font-weight: 800; }
+  .hint { color: var(--sky, #7ec8e3); font-size: 0.82rem; min-height: 1.1em; margin: 4px 0; }
+  .chips, .modes, .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .chips button { flex: 1; min-width: 56px; min-height: 56px; border-radius: 999px; font-weight: 800; }
+  .modes button, .row button { flex: 1; min-width: 88px; }
+  #throwGrip {
+    width: 100%; min-height: 64px; margin-top: 8px;
+    background: #2c2618; border: 1px dashed var(--gold);
   }
-  .pip {
-    min-width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: #2c281f;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
+  #throwGrip.hot { background: #5a4a20; }
+  .tickets { max-height: 96px; overflow: auto; }
+  .ticket { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; font-size: 0.86rem; border-top: 1px solid var(--line); }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(6,5,4,0.88);
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    padding: 24px 18px calc(var(--safe-b) + 20px); text-align: center; z-index: 8;
   }
-  .pip.seven { background: #5a2d28; }
-  .pip.point { background: #4a3b18; color: var(--gold); }
-  .pip.craps { background: #2a3340; }
-
+  .overlay.on { display: flex; }
+  .overlay h2 { font-size: 0.8rem; letter-spacing: 0.22em; color: var(--gold); }
+  .overlay .big { font-size: clamp(2.4rem, 12vw, 4rem); font-weight: 800; margin: 8px 0; }
+  .overlay p { color: var(--muted); max-width: 26rem; line-height: 1.4; }
+  .overlay .stack { font-size: 1.4rem; color: var(--gold); margin: 8px 0 18px; }
+  .overlay button { min-width: min(100%, 320px); min-height: 64px; font-size: 1.05rem; }
+  .pickgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(420px, 100%); margin: 16px 0; }
+  .pickgrid button { min-height: 72px; text-align: left; }
+  .pay { text-align: left; width: min(440px, 100%); background: #1c1914; border-radius: 18px; padding: 14px; margin: 12px 0; }
+  .pay .ln { margin: 4px 0; color: var(--muted); }
+  .pay .ln.win { color: var(--ok); }
   .sheet {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.62);
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 20;
-    padding: 12px;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: none; align-items: flex-end; justify-content: center; z-index: 12; padding: 12px;
   }
   .sheet.on { display: flex; }
-  .sheet .panel {
-    width: min(560px, 100%);
-    max-height: min(88vh, 720px);
-    overflow: auto;
-    background: #201e19;
-    border: 1px solid var(--line);
-    border-radius: 20px 20px 12px 12px;
-    padding: 16px;
-  }
-  .sheet h2 { margin-bottom: 8px; }
-  .sheet p, .sheet li { color: var(--muted); line-height: 1.45; }
-  .sheet ul { padding-left: 18px; margin: 8px 0 12px; }
-  .crew-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    margin: 8px 0;
-  }
+  .panel { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #201e19; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+  .panel h2 { margin-bottom: 8px; }
+  .panel p, .panel li { color: var(--muted); line-height: 1.45; }
+  .panel ul { padding-left: 18px; margin: 8px 0 12px; }
+  .crew-row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
   .crew-row input { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #2b271f; padding: 0 10px; }
-
-  @media (min-width: 780px) {
-    .players { grid-template-columns: repeat(4, 1fr); }
-    .board { grid-template-columns: 1fr 1fr; }
-  }
-  @media (orientation: landscape) and (max-height: 560px) {
-    .app {
-      width: 100%;
-      max-width: none;
-      grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.3fr) minmax(220px, 1fr);
-      grid-template-areas:
-        "head table banner"
-        "players table board"
-        "actions table settlement";
-      align-items: start;
-    }
-    header { grid-area: head; }
-    .phase-banner { grid-area: banner; }
-    .table { grid-area: table; }
-    .players { grid-area: players; grid-template-columns: 1fr; }
-    .actions { grid-area: actions; }
-    .board { grid-area: board; grid-template-columns: 1fr; }
-    .settlement { grid-area: settlement; }
-    .alley { min-height: 220px; }
-    .dice-stage { height: 110px; }
-  }
   @media (prefers-reduced-motion: reduce) {
-    .cube { transition: none; }
-    * { scroll-behavior: auto !important; }
+    .cube { transition: none !important; }
   }
 </style>
 </head>
 <body>
-  <div class="app">
+  <div id="view">
+    <canvas id="gl"></canvas>
+    <div id="fallback2d" hidden>
+      <div class="wall"></div>
+      <div class="alley">
+        <div class="dice-box">
+          <div class="cube" id="cube1"></div>
+          <div class="cube" id="cube2"></div>
+        </div>
+        <div class="curb"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud" id="hud">
     <header>
-      <div class="brand">
-        <span class="tag">PLAYER-BANKED · NO HOUSE</span>
+      <div>
+        <span class="tag">PASS-AND-PLAY · PLAY MONEY</span>
         <h1>STREET DICE</h1>
       </div>
-      <div class="header-actions">
+      <div class="iconrow">
         <button class="ghost" id="muteBtn" aria-label="Mute">🔊</button>
         <button class="ghost" id="rulesBtn">Rules</button>
         <button class="ghost" id="crewBtn">Crew</button>
       </div>
     </header>
+    <div class="banner" id="banner"><b id="phaseName">COME-OUT</b><span id="phaseDetail">Pass the phone. Post, fade, throw.</span></div>
+    <div class="crew" id="crewStrip"></div>
+    <div class="grow"></div>
+    <div class="tray" id="tray"></div>
+  </div>
 
-    <div class="phase-banner" id="banner">
-      <div>
-        <div class="phase-name" id="phaseName">COME-OUT</div>
-        <div class="cover-line" id="whoShot">Waiting on a line.</div>
-      </div>
-      <div class="phase-detail" id="phaseDetail">Post, fade, then throw.</div>
-    </div>
+  <div class="overlay" id="handoff">
+    <h2>PASS THE PHONE</h2>
+    <div class="big" id="handName">Curb</div>
+    <div class="stack" id="handStack">$200</div>
+    <p id="handWhy">You're up.</p>
+    <button class="primary" id="handGo">I'M THEM</button>
+  </div>
 
-    <main class="table" aria-label="Street table">
-      <div class="wall"></div>
-      <div class="alley">
-        <div class="dice-stage" id="diceStage">
-          <div class="scene"><div class="cube" id="cube1"></div></div>
-          <div class="scene"><div class="cube" id="cube2"></div></div>
-        </div>
-        <div class="curb"></div>
-        <div class="chalk" id="chalk"></div>
-        <div class="pot">
-          <div class="pot-label">CENTER POT · PASS / FADE</div>
-          <div class="bills" id="bills"></div>
-          <div class="pot-amt" id="potAmt">$0</div>
-          <div class="cover-line" id="potCover">Nothing on the line yet.</div>
-        </div>
-      </div>
-    </main>
+  <div class="overlay" id="picker">
+    <h2>WHO GRABS THE PHONE?</h2>
+    <p>Every bet is play money between friends. Tap the next set of hands.</p>
+    <div class="pickgrid" id="pickGrid"></div>
+    <button class="ghost" id="pickCancel">Stay on this phone</button>
+  </div>
 
-    <section class="settlement" id="settlement">
-      <h2>Last throw</h2>
-      <div class="empty">No rolls yet. Put money down and let it eat.</div>
-    </section>
-
-    <section class="players" id="players"></section>
-
-    <section class="actions">
-      <div class="acting-hint" id="actingHint">You're holding Dice's stack.</div>
-      <div class="chips" id="chips"></div>
-      <div class="preview" id="preview"></div>
-      <div class="act-row">
-        <button id="postBtn">Post the line</button>
-        <button id="fadeBtn">Fade it</button>
-        <button id="cutBtn">Cut extra</button>
-        <button id="pullBtn">Pull line</button>
-      </div>
-      <div class="room-row" id="roomTypes"></div>
-      <button class="primary" id="rollBtn">THROW AT THE WALL</button>
-    </section>
-
-    <section class="board">
-      <div class="card">
-        <h3>OPEN ACTION — COVER SOMEBODY</h3>
-        <div id="openBets"><div class="empty">No tickets hanging.</div></div>
-      </div>
-      <div class="card">
-        <h3>LIVE ROOM BETS</h3>
-        <div id="liveBets"><div class="empty">Nobody's fading the side yet.</div></div>
-      </div>
-      <div class="card" style="grid-column: 1 / -1">
-        <h3>ROLL TAPE</h3>
-        <div class="history" id="history"><div class="empty">Clean curb.</div></div>
-      </div>
-    </section>
+  <div class="overlay" id="payout">
+    <h2>THE THROW</h2>
+    <div class="big" id="payTotal">—</div>
+    <p id="payHead"></p>
+    <div class="pay" id="payBody"></div>
+    <button class="primary" id="payNext">KEEP IT MOVING</button>
   </div>
 
   <div class="sheet" id="rulesSheet">
     <div class="panel">
       <h2>How this curb runs</h2>
       <ul>
-        <li>Pass-and-play: tap a player to hold their stack.</li>
-        <li>Shooter posts the line. Everybody else can fade a piece until it's covered.</li>
-        <li>Come-out: 7 or 11 the pass wins even money. 2, 3, or 12 the fade scoops it. Anything else is the point.</li>
-        <li>Then the shooter has to hit that point before a 7. Seven-out and the dice walk.</li>
-        <li>Craps on the come-out loses the line, but the shooter keeps the rocks.</li>
-        <li>Room bets are player-to-player. One soul offers, another covers at true odds.</li>
-        <li>Point vs 7: 4/10 pays 2:1, 5/9 pays 3:2, 6/8 pays 6:5.</li>
-        <li>Next-roll 7 is 5:1, 11 is 17:1, any craps is 8:1. Hard 4/10 is 8:1, hard 6/8 is 10:1.</li>
+        <li>Pass the phone. The handoff screen tells you who is up.</li>
+        <li>Stack chips ($1 / $5 / $10 / $20), undo, then confirm. Shooter posts the line; everybody else fades it.</li>
+        <li>Come-out: 7 or 11 pass wins even money. 2, 3, or 12 the fade scoops it. Anything else is the point.</li>
+        <li>Then hit that point before a 7. Seven-out and the dice walk. Craps lose the line, shooter keeps the rocks.</li>
+        <li>Room bets: one player offers, another covers at true odds — 4/10 2:1, 5/9 3:2, 6/8 6:5, next 7 5:1, 11 17:1, craps 8:1, hard 4/10 8:1, hard 6/8 10:1.</li>
+        <li>Flick the alley or hold-and-release the throw bar. The number is decided first; the dice just land on it.</li>
       </ul>
       <button class="primary" data-close="rulesSheet">Got it</button>
     </div>
   </div>
-
   <div class="sheet" id="crewSheet">
     <div class="panel">
       <h2>The crew</h2>
-      <p>Street names only. Stacks save on this phone (v2). Reset wipes the curb.</p>
+      <p>Street names only. Stacks save on this phone (v2). Reset wipes the curb. Play money — no real payments.</p>
       <div id="crewList"></div>
-      <div class="act-row" style="margin-top:12px">
+      <div class="row" style="margin-top:12px">
         <button id="addPlayerBtn">Add a body</button>
         <button class="warn" id="resetBtn">Reset the curb</button>
       </div>
@@ -541,57 +223,88 @@
   </div>
 
 <script src="engine.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"
+  }
+}
+</script>
 <script>
-(function () {
+window.__streetStart = function (THREE) {
+  if (window.__streetStarted) return;
+  window.__streetStarted = true;
+
   var SD = window.StreetDice;
-  var state = null;
-  var stake = 10;
-  var audio = { ctx: null, muted: false };
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var lastFaces = [1, 1];
+  var force2D = /(?:\?|&)2d=1\b/.test(location.search) || !THREE || !hasWebGL();
+  var state = null;
+  var ui = {
+    screen: "handoff",
+    targetId: null,
+    reason: "",
+    mode: "post",
+    offerType: "next7",
+    coverId: null,
+    chips: [],
+    undo: [],
+    charging: false,
+    charge: 0
+  };
+  var audio = { ctx: null, muted: false };
+  var scene = null;
   var saveTimer = null;
+  var holdRepeat = null;
 
   var $ = function (id) { return document.getElementById(id); };
+
+  function hasWebGL() {
+    try {
+      var c = document.createElement("canvas");
+      return !!(c.getContext("webgl2") || c.getContext("webgl"));
+    } catch (e) { return false; }
+  }
+
+  function money(n) { return "$" + n; }
+  function pending() { return ui.chips.reduce(function (a, b) { return a + b; }, 0); }
+  function me() { return SD.player(state, state.actingId); }
 
   function load() {
     try {
       var raw = localStorage.getItem(SD.SAVE_KEY);
-      var loaded = raw ? SD.hydrate(JSON.parse(raw)) : null;
-      state = loaded || SD.createGame();
-    } catch (e) {
-      state = SD.createGame();
-    }
+      state = raw ? SD.hydrate(JSON.parse(raw)) : null;
+    } catch (e) { state = null; }
+    if (!state) state = SD.createGame();
     audio.muted = !!state.muted;
+    ui.targetId = state.shooterId;
+    ui.reason = SD.playerName(state, state.shooterId) + " has the rocks. Post a line.";
+    ui.screen = "handoff";
   }
 
   function save() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
-      try {
-        localStorage.setItem(SD.SAVE_KEY, JSON.stringify(SD.snapshot(state)));
-      } catch (e) {}
+      try { localStorage.setItem(SD.SAVE_KEY, JSON.stringify(SD.snapshot(state))); } catch (e) {}
     }, 80);
   }
 
-  function apply(res, quiet) {
-    if (!res.ok) {
-      flash(res.error);
-      return false;
-    }
+  function apply(res) {
+    if (!res.ok) { toast(res.error); return false; }
     state = res.state;
     save();
     render();
-    if (!quiet && res.error) flash(res.error);
+    if (scene && scene.sync) scene.sync(state);
     return true;
   }
 
-  function flash(msg) {
-    $("preview").textContent = msg;
+  function toast(msg) {
+    var el = document.querySelector("#tray .hint");
+    if (el) el.textContent = msg;
   }
 
-  function haptic(pattern) {
+  function haptic(p) {
     if (reduceMotion || !navigator.vibrate) return;
-    navigator.vibrate(pattern);
+    navigator.vibrate(p);
   }
 
   function ensureAudio() {
@@ -602,396 +315,842 @@
 
   function beep(freq, dur, type, gain) {
     if (audio.muted || !audio.ctx) return;
-    var ctx = audio.ctx;
-    var o = ctx.createOscillator();
-    var g = ctx.createGain();
-    o.type = type || "square";
-    o.frequency.value = freq;
+    var ctx = audio.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || "square"; o.frequency.value = freq;
     g.gain.value = gain || 0.04;
     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-    o.connect(g); g.connect(ctx.destination);
-    o.start();
-    o.stop(ctx.currentTime + dur);
+    o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + dur);
   }
-
   function noise(dur, vol) {
     if (audio.muted || !audio.ctx) return;
-    var ctx = audio.ctx;
-    var n = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-    var d = n.getChannelData(0);
+    var ctx = audio.ctx, n = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate), d = n.getChannelData(0);
     for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-    var src = ctx.createBufferSource();
-    var g = ctx.createGain();
-    var f = ctx.createBiquadFilter();
-    src.buffer = n;
-    f.type = "bandpass";
-    f.frequency.value = 1200;
-    g.gain.value = vol || 0.08;
-    src.connect(f); f.connect(g); g.connect(ctx.destination);
-    src.start();
+    var src = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    src.buffer = n; f.type = "bandpass"; f.frequency.value = 1100; g.gain.value = vol || 0.08;
+    src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
   }
-
   function snd(kind) {
     if (audio.muted) return;
     ensureAudio();
-    if (kind === "rattle") { noise(0.18, 0.1); beep(180, 0.08, "sawtooth", 0.03); }
-    if (kind === "clack") { beep(90, 0.09, "square", 0.06); noise(0.06, 0.12); }
-    if (kind === "cash") { beep(660, 0.08, "triangle", 0.05); setTimeout(function(){ beep(880, 0.1, "triangle", 0.04); }, 70); }
-    if (kind === "win") { beep(523, 0.1, "square", 0.05); setTimeout(function(){ beep(659, 0.12, "square", 0.05); }, 90); }
+    if (kind === "rattle") { noise(0.16, 0.1); beep(170, 0.07, "sawtooth", 0.03); }
+    if (kind === "clack") { beep(88, 0.08, "square", 0.06); noise(0.05, 0.12); }
+    if (kind === "cash") { beep(660, 0.07, "triangle", 0.05); setTimeout(function () { beep(880, 0.09, "triangle", 0.04); }, 70); }
+    if (kind === "win") { beep(523, 0.1, "square", 0.05); setTimeout(function () { beep(659, 0.12, "square", 0.05); }, 90); }
     if (kind === "lose") { beep(140, 0.16, "sawtooth", 0.05); }
   }
 
-  function faceDots(n) {
-    var map = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-    return map[n] || [];
+  function pushUndo(item) { ui.undo.push(item); }
+  function addChip(n) {
+    var p = me();
+    if (!p || p.bankroll < pending() + n) { toast(p.name + " is light for that chip."); return; }
+    ui.chips.push(n);
+    haptic(8);
+    renderTray();
+  }
+  function undoChipOrBet() {
+    if (ui.chips.length) { ui.chips.pop(); renderTray(); return; }
+    var last = ui.undo.pop();
+    if (!last) { toast("Nothing to undo."); return; }
+    if (last.type === "post") apply(SD.unpostLine(state, last.playerId, last.amount));
+    else if (last.type === "fade") apply(SD.unfadeLine(state, last.playerId, last.amount));
+    else if (last.type === "offer") apply(SD.cancelBet(state, last.betId, last.playerId));
+    else if (last.type === "cover") apply(SD.uncoverBet(state, last.betId, last.playerId, last.amount));
   }
 
-  function buildCube(el) {
-    el.innerHTML = "";
-    [1, 2, 3, 4, 5, 6].forEach(function (n) {
-      var f = document.createElement("div");
-      f.className = "face f" + n;
-      for (var i = 0; i < 9; i++) {
-        var c = document.createElement("div");
-        if (faceDots(n).indexOf(i) >= 0) c.className = "dot";
-        f.appendChild(c);
-      }
-      el.appendChild(f);
-    });
+  function defaultMode() {
+    var p = me();
+    if (!p) return "post";
+    if (p.id === state.shooterId && state.phase === "comeout") return "post";
+    if (p.id !== state.shooterId && SD.lineRemaining(state) > 0) return "fade";
+    if (state.bets.some(function (b) { return b.status === "open" && b.fromId !== p.id; })) return "cover";
+    return "side";
   }
 
-  function faceRot(n) {
-    return {
-      1: "rotateX(0deg) rotateY(0deg)",
-      2: "rotateX(-90deg) rotateY(0deg)",
-      3: "rotateX(0deg) rotateY(-90deg)",
-      4: "rotateX(0deg) rotateY(90deg)",
-      5: "rotateX(90deg) rotateY(0deg)",
-      6: "rotateX(0deg) rotateY(180deg)"
-    }[n];
+  function confirmBet() {
+    var amt = pending();
+    var p = me();
+    if (!amt) { toast("Tap chips first."); return; }
+    var res, ok = false;
+    if (ui.mode === "post") {
+      res = SD.postLine(state, p.id, amt);
+      if (apply(res)) { pushUndo({ type: "post", playerId: p.id, amount: res.posted }); ok = true; }
+    } else if (ui.mode === "fade") {
+      res = SD.fadeLine(state, p.id, amt);
+      if (apply(res)) { pushUndo({ type: "fade", playerId: p.id, amount: res.faded }); ok = true; }
+    } else if (ui.mode === "side") {
+      res = SD.offerBet(state, p.id, ui.offerType, amt);
+      if (apply(res)) { pushUndo({ type: "offer", playerId: p.id, betId: res.bet.id }); ok = true; }
+    } else if (ui.mode === "cover") {
+      if (!ui.coverId) { toast("Pick a ticket to fade."); return; }
+      res = SD.coverBet(state, ui.coverId, p.id, amt);
+      if (apply(res)) { pushUndo({ type: "cover", playerId: p.id, betId: ui.coverId, amount: res.covered }); ok = true; }
+    }
+    if (ok) {
+      ui.chips = [];
+      snd("cash");
+      afterMoney();
+    }
   }
 
-  function setFace(el, n, flying) {
-    if (flying) {
-      el.style.transform = "translateY(-46px) rotateX(" + (720 + n * 80) + "deg) rotateY(" + (540 + n * 40) + "deg) rotateZ(200deg)";
+  function afterMoney() {
+    if (ui.mode === "post" && SD.lineRemaining(state) > 0) {
+      openPicker("Line's up. Who's fading?");
       return;
     }
-    el.style.transform = faceRot(n);
-  }
-
-  function money(n) { return "$" + n; }
-
-  function acting() { return SD.player(state, state.actingId); }
-
-  function renderChips() {
-    var box = $("chips");
-    box.innerHTML = "";
-    [5, 10, 25, 50].forEach(function (n) {
-      var b = document.createElement("button");
-      b.textContent = money(n);
-      if (stake === n) b.className = "on";
-      b.onclick = function () { stake = n; render(); };
-      box.appendChild(b);
-    });
-    var inp = document.createElement("input");
-    inp.type = "number";
-    inp.min = "1";
-    inp.inputMode = "numeric";
-    inp.value = stake;
-    inp.setAttribute("aria-label", "Custom stake");
-    inp.onchange = function () {
-      var v = parseInt(inp.value, 10);
-      if (v > 0) stake = v;
-      render();
-    };
-    box.appendChild(inp);
-  }
-
-  function renderPlayers() {
-    var box = $("players");
-    box.innerHTML = "";
-    var deltas = (state.lastSettlement && state.lastSettlement.deltas) || {};
-    state.players.forEach(function (p) {
-      var btn = document.createElement("button");
-      btn.className = "player" + (p.id === state.actingId ? " acting" : "");
-      var faded = 0;
-      state.line.covers.forEach(function (c) { if (c.playerId === p.id) faded += c.amount; });
-      var badges = [];
-      if (p.id === state.shooterId) badges.push("SHOOTER");
-      if (faded) badges.push("FADING $" + faded);
-      if (p.id === state.actingId) badges.push("YOUR HANDS");
-      var d = deltas[p.id] || 0;
-      btn.innerHTML =
-        '<div class="who"><span>' + p.name + '</span><span class="badge">' + (badges[0] || "CREW") + "</span></div>" +
-        '<div class="stack">' + money(p.bankroll) + "</div>" +
-        '<div class="delta ' + (d > 0 ? "up" : d < 0 ? "down" : "") + '">' +
-          (d > 0 ? "+" + money(d) : d < 0 ? "put " + money(-d) + " in" : (badges[1] || "tap to play as them")) +
-        "</div>";
-      btn.onclick = function () { apply(SD.setActing(state, p.id), true); };
-      box.appendChild(btn);
-    });
-  }
-
-  function renderBills() {
-    var pot = state.line.amount + SD.fadedTotal(state);
-    var box = $("bills");
-    box.innerHTML = "";
-    var count = pot <= 0 ? 0 : Math.min(9, 2 + Math.floor(pot / 15));
-    var vals = [1, 5, 10, 20, 50, 100];
-    for (var i = 0; i < count; i++) {
-      var el = document.createElement("div");
-      el.className = "bill";
-      el.textContent = "$" + vals[i % vals.length];
-      el.style.setProperty("--r", (i * 7 - 18) + "deg");
-      el.style.setProperty("--x", ((i % 3) * 10 - 10) + "px");
-      el.style.setProperty("--y", (8 - i * 3) + "px");
-      box.appendChild(el);
+    if (ui.mode === "fade" && SD.lineRemaining(state) > 0) {
+      openPicker("Still " + money(SD.lineRemaining(state)) + " open. Next fade?");
+      return;
     }
-    $("potAmt").textContent = money(pot);
-    var bits = [];
-    if (state.line.amount) bits.push(SD.playerName(state, state.shooterId) + " posted " + money(state.line.amount));
-    SD.coverersSummary(state).forEach(function (t) { bits.push(t); });
-    var need = SD.lineRemaining(state);
-    if (need > 0) bits.push(money(need) + " still looking for a fade");
-    $("potCover").textContent = bits.join(" · ") || "Nothing on the line yet.";
+    if (ui.mode === "fade" && SD.canRoll(state)) {
+      openPicker("Line's faded. Side action or pass to the shooter to throw?");
+      return;
+    }
+    if (ui.mode === "side") {
+      openPicker("Ticket's hanging. Who covers it?");
+      return;
+    }
+    if (ui.mode === "cover") {
+      var live = ui.coverId && state.bets.some(function (b) { return b.id === ui.coverId && b.status === "live"; });
+      openPicker(live
+        ? "Covered. More side action, or pass to the shooter?"
+        : "Still uncovered. Who fades the rest?");
+      return;
+    }
+    render();
   }
 
-  function renderChalk() {
-    var box = $("chalk");
-    box.innerHTML = "";
-    [4, 5, 6, 8, 9, 10, "C", "E"].forEach(function (n, i) {
-      var s = document.createElement("span");
-      s.textContent = n;
-      s.style.setProperty("--tilt", ((i % 2 ? 2 : -2)) + "deg");
-      if (n === state.point) s.className = "on";
-      box.appendChild(s);
+  function openHandoff(id, reason) {
+    ui.screen = "handoff";
+    ui.targetId = id;
+    ui.reason = reason;
+    ui.chips = [];
+    render();
+  }
+
+  function openPicker(reason) {
+    ui.screen = "pick";
+    ui.reason = reason || "Who's next?";
+    render();
+  }
+
+  function takePhone(id) {
+    apply(SD.setActing(state, id));
+    ui.screen = "play";
+    ui.targetId = id;
+    ui.mode = defaultMode();
+    ui.chips = [];
+    render();
+  }
+
+  function canThisPlayerRoll() {
+    return SD.canRoll(state) && state.actingId === state.shooterId && !state.busy;
+  }
+
+  function decideAndThrow(power) {
+    if (!canThisPlayerRoll()) return;
+    var dice = SD.rollDice();
+    apply(SD.setBusy(state, true));
+    ui.undo = [];
+    haptic([12, 28, 12]);
+    snd("rattle");
+    scene.throw(dice[0], dice[1], power || 1, function () {
+      var res = SD.settleRoll(state, dice[0], dice[1]);
+      if (!res.ok) { apply(SD.setBusy(state, false)); toast(res.error); return; }
+      state = res.state;
+      save();
+      var r = res.settlement.result;
+      if (r === "natural" || r === "hit") { snd("win"); haptic([10, 40, 10]); }
+      else if (r === "craps" || r === "seven-out") { snd("lose"); haptic(40); }
+      else snd("clack");
+      ui.screen = "payout";
+      render();
+      if (scene.sync) scene.sync(state);
     });
   }
 
   function renderBanner() {
     var shooter = SD.playerName(state, state.shooterId);
-    var banner = $("banner");
+    $("banner").className = "banner" + (state.phase === "point" ? " point" : "");
     if (state.phase === "point") {
-      banner.className = "phase-banner point";
       $("phaseName").textContent = "POINT IS " + state.point;
       $("phaseDetail").textContent = shooter + " has to hit " + state.point + " before a 7.";
     } else {
-      banner.className = "phase-banner";
       $("phaseName").textContent = "COME-OUT";
-      $("phaseDetail").textContent = SD.canRoll(state) ? shooter + " is faded. Let it eat." : "Post the line, then get it faded.";
+      $("phaseDetail").textContent = SD.canRoll(state)
+        ? shooter + " is faded. Flick the alley or hold the throw bar."
+        : shooter + " posts · the crew fades · then we throw.";
     }
-    $("whoShot").textContent = shooter + " has the rocks" + (state.line.amount ? " · " + money(state.line.amount) + " on the line" : "");
   }
 
-  function renderSettlement() {
-    var box = $("settlement");
-    var s = state.lastSettlement;
-    if (!s) {
-      box.innerHTML = "<h2>Last throw</h2><div class='empty'>No rolls yet. Put money down and let it eat.</div>";
-      return;
-    }
-    var html = "<h2>" + s.d1 + " + " + s.d2 + " = " + s.total + (s.hard ? " hard" : "") + "</h2>";
-    html += "<div class='row'>" + s.headline + "</div>";
-    (s.lines || []).forEach(function (line) {
-      html += "<div class='row " + (line.cls || "") + "'>" + line.text + "</div>";
-    });
-    box.innerHTML = html;
-  }
-
-  function renderHistory() {
-    var box = $("history");
-    if (!state.rollHistory.length) {
-      box.innerHTML = "<div class='empty'>Clean curb.</div>";
-      return;
-    }
-    box.innerHTML = state.rollHistory.map(function (r) {
-      var cls = "pip";
-      if (r.total === 7) cls += " seven";
-      else if (r.result === "point" || r.result === "hit") cls += " point";
-      else if (r.result === "craps") cls += " craps";
-      return '<div class="' + cls + '" title="' + r.headline + '">' + r.total + "</div>";
-    }).join("");
-  }
-
-  function renderBets() {
-    function list(el, items, open) {
-      if (!items.length) {
-        el.innerHTML = "<div class='empty'>" + (open ? "No tickets hanging." : "Nobody's fading the side yet.") + "</div>";
-        return;
-      }
-      el.innerHTML = items.map(function (bet) {
-        var d = SD.describeBet(state, bet);
-        var btn = "";
-        if (open) {
-          if (bet.fromId !== state.actingId) {
-            btn = "<button data-cover='" + bet.id + "'>Cover " + money(d.coverNeeded - d.covered) + "</button>";
-          } else if (d.covered === 0) {
-            btn = "<button class='ghost' data-cancel='" + bet.id + "'>Pull it</button>";
-          }
-        }
-        return '<div class="bet"><div><strong>' + d.from + "</strong> · " + d.title +
-          " · " + d.odds + "<br><span class='empty'>" + money(d.stake) + " vs " + money(d.coverNeeded) +
-          (d.coverers.length ? " · " + d.coverers.join(", ") : " · waiting on a fade") +
-          "</span></div><div>" + btn + "</div></div>";
-      }).join("");
-    }
-    list($("openBets"), state.bets.filter(function (b) { return b.status === "open"; }), true);
-    list($("liveBets"), state.bets.filter(function (b) { return b.status === "live"; }), false);
-  }
-
-  function renderRoomTypes() {
-    var box = $("roomTypes");
+  function renderCrewStrip() {
+    var box = $("crewStrip");
     box.innerHTML = "";
-    var types = ["hits", "dont", "next7", "next11", "craps", "hard4", "hard6", "hard8", "hard10"];
-    types.forEach(function (type) {
-      var spec = SD.BET_TYPES[type];
-      if (spec.needsPoint && state.phase !== "point") return;
+    SD.tableExposure(state).forEach(function (row) {
       var b = document.createElement("button");
-      var point = spec.needsPoint ? state.point : 4;
-      b.textContent = spec.label + " " + SD.oddsLabel(type, point);
-      b.onclick = function () { offer(type); };
+      b.className = "seat" + (row.id === state.actingId && ui.screen === "play" ? " me" : "");
+      var bits = [];
+      if (row.id === state.shooterId) bits.push("rocks");
+      if (row.line) bits.push("line " + money(row.line));
+      if (row.fade) bits.push("fade " + money(row.fade));
+      if (row.room) bits.push("side " + money(row.room));
+      b.innerHTML = '<div class="nm">' + row.name + '</div><div class="stk">' + money(row.bankroll) +
+        '</div><div class="on">' + (bits.join(" · ") || "nothing down") + "</div>";
+      b.onclick = function () { openHandoff(row.id, "Pass the phone to " + row.name + "."); };
       box.appendChild(b);
     });
   }
 
-  function renderPreview() {
-    var me = acting();
-    $("actingHint").textContent = "You're holding " + me.name + "'s stack · " + money(me.bankroll);
-    $("muteBtn").textContent = audio.muted ? "🔇" : "🔊";
-    var bits = [];
-    if (me.id === state.shooterId) bits.push("Post " + money(stake) + " on the line.");
-    else if (state.line.amount) bits.push("Fade up to " + money(Math.min(stake, SD.lineRemaining(state))) + ".");
-    if (state.phase === "point") {
-      var prev = SD.previewPayout("hits", stake, state.point);
-      if (prev.ok) bits.push("He hits " + prev.odds + ": you put " + money(prev.stake) + ", cover needs " + money(prev.cover) + ", winner scoops " + money(prev.winIfHit) + ".");
-    } else {
-      var n7 = SD.previewPayout("next7", stake, null);
-      if (n7.ok) bits.push("Next 7 at " + n7.odds + " needs a " + money(n7.cover) + " fade.");
+  function previewText() {
+    var amt = pending();
+    var p = me();
+    if (!p) return "";
+    if (!amt) return "Tap chips, undo if you fat-finger, then confirm.";
+    if (ui.mode === "post") return "Confirm posts " + money(amt) + " from " + p.name + " onto the line.";
+    if (ui.mode === "fade") {
+      var take = Math.min(amt, SD.lineRemaining(state), p.bankroll);
+      return "Confirm fades " + money(take) + " of " + money(SD.lineRemaining(state)) + " still open.";
     }
-    $("preview").textContent = bits.join(" ");
-    $("postBtn").disabled = state.busy || me.id !== state.shooterId || state.phase !== "comeout";
-    $("fadeBtn").disabled = state.busy || me.id === state.shooterId || !state.line.amount || SD.lineRemaining(state) <= 0;
-    $("cutBtn").disabled = state.busy || me.id !== state.shooterId || state.phase !== "comeout" || SD.fadedTotal(state) <= 0 || SD.lineRemaining(state) <= 0;
-    $("pullBtn").disabled = state.busy || me.id !== state.shooterId || state.phase !== "comeout" || !state.line.amount || SD.fadedTotal(state) > 0;
-    $("rollBtn").disabled = state.busy || !SD.canRoll(state);
+    if (ui.mode === "side") {
+      var prev = SD.previewPayout(ui.offerType, amt, state.point);
+      return prev.ok
+        ? SD.BET_TYPES[ui.offerType].label + " at " + prev.odds + " — you put " + money(prev.stake) + ", cover needs " + money(prev.cover) + ", winner scoops " + money(prev.winIfHit) + "."
+        : prev.error;
+    }
+    if (ui.mode === "cover") return "Confirm covers with " + money(amt) + " (snaps down to a true-odds piece).";
+    return "";
   }
 
-  function renderCrew() {
+  function renderTray() {
+    var p = me();
+    var tray = $("tray");
+    if (ui.screen !== "play" || !p) { tray.innerHTML = ""; return; }
+    var types = Object.keys(SD.BET_TYPES).filter(function (t) {
+      return !SD.BET_TYPES[t].needsPoint || state.phase === "point";
+    });
+    var open = state.bets.filter(function (b) { return b.status === "open"; });
+    var html = '<div class="who"><strong>' + p.name + "</strong> · " + money(p.bankroll) +
+      (p.id === state.shooterId ? " · shooter" : "") + "</div>";
+    html += '<div class="pending">' + (pending() ? "Wager " + money(pending()) : "No chips in hand") + "</div>";
+    html += '<div class="hint">' + previewText() + "</div>";
+    html += '<div class="chips" id="chipRow"></div>';
+    html += '<div class="modes">';
+    if (p.id === state.shooterId && state.phase === "comeout") html += '<button data-mode="post"' + (ui.mode === "post" ? ' class="on"' : "") + ">Post line</button>";
+    if (p.id !== state.shooterId && state.line.amount) html += '<button data-mode="fade"' + (ui.mode === "fade" ? ' class="on"' : "") + ">Fade</button>";
+    html += '<button data-mode="side"' + (ui.mode === "side" ? ' class="on"' : "") + ">Side bet</button>";
+    if (open.some(function (b) { return b.fromId !== p.id; })) html += '<button data-mode="cover"' + (ui.mode === "cover" ? ' class="on"' : "") + ">Cover</button>";
+    html += "</div>";
+    if (ui.mode === "side") {
+      html += '<div class="row" id="typeRow">';
+      types.forEach(function (t) {
+        html += '<button data-type="' + t + '"' + (ui.offerType === t ? ' class="on"' : "") + ">" +
+          SD.BET_TYPES[t].label + " " + SD.oddsLabel(t, SD.BET_TYPES[t].needsPoint ? state.point : 4) + "</button>";
+      });
+      html += "</div>";
+    }
+    if (ui.mode === "cover") {
+      html += '<div class="tickets">';
+      open.forEach(function (b) {
+        if (b.fromId === p.id) return;
+        var d = SD.describeBet(state, b);
+        html += '<div class="ticket"><div><strong>' + d.from + "</strong> " + d.title + " · " + d.odds +
+          "<br>" + money(d.stake) + " vs " + money(d.coverNeeded - d.covered) + ' open</div>' +
+          '<button data-cover="' + b.id + '"' + (ui.coverId === b.id ? ' class="on"' : "") + ">This one</button></div>";
+      });
+      html += "</div>";
+    }
+    html += '<div class="row"><button id="undoBtn">Undo</button><button class="primary" id="confirmBtn">Confirm</button><button class="ghost" id="passBtn">Pass phone</button></div>';
+    if (canThisPlayerRoll()) {
+      html += '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>';
+    } else if (p.id === state.shooterId && state.line.amount && SD.lineRemaining(state) > 0) {
+      html += '<div class="row"><button id="cutBtn">Cut extra</button><button id="pullBtn">Pull line</button></div>';
+    }
+    tray.innerHTML = html;
+
+    [1, 5, 10, 20].forEach(function (n) {
+      var b = document.createElement("button");
+      b.textContent = money(n);
+      bindHold(b, function () { addChip(n); });
+      $("chipRow").appendChild(b);
+    });
+    var custom = document.createElement("button");
+    custom.textContent = "Custom";
+    custom.onclick = function () {
+      var v = parseInt(prompt("Custom chip (whole dollars)", "25"), 10);
+      if (v > 0) addChip(v);
+    };
+    $("chipRow").appendChild(custom);
+
+    tray.querySelectorAll("[data-mode]").forEach(function (b) {
+      b.onclick = function () { ui.mode = b.getAttribute("data-mode"); renderTray(); };
+    });
+    tray.querySelectorAll("[data-type]").forEach(function (b) {
+      b.onclick = function () { ui.offerType = b.getAttribute("data-type"); renderTray(); };
+    });
+    tray.querySelectorAll("[data-cover]").forEach(function (b) {
+      b.onclick = function () { ui.coverId = b.getAttribute("data-cover"); renderTray(); };
+    });
+    $("undoBtn").onclick = undoChipOrBet;
+    $("confirmBtn").onclick = confirmBet;
+    $("passBtn").onclick = function () { openPicker("Pass the phone to the next set of hands."); };
+    if ($("cutBtn")) $("cutBtn").onclick = function () { apply(SD.cutLine(state, p.id)); };
+    if ($("pullBtn")) $("pullBtn").onclick = function () { apply(SD.pullLine(state, p.id)); };
+    if ($("throwGrip")) bindThrowGrip($("throwGrip"));
+  }
+
+  function bindHold(el, fn) {
+    var t = null;
+    var start = function (e) {
+      e.preventDefault();
+      fn();
+      t = setTimeout(function rep() { fn(); t = setTimeout(rep, 110); }, 360);
+    };
+    var stop = function () { clearTimeout(t); t = null; };
+    el.addEventListener("pointerdown", start);
+    el.addEventListener("pointerup", stop);
+    el.addEventListener("pointerleave", stop);
+    el.addEventListener("pointercancel", stop);
+  }
+
+  function bindThrowGrip(el) {
+    var startT = 0;
+    el.onpointerdown = function (e) {
+      e.preventDefault();
+      if (!canThisPlayerRoll()) return;
+      startT = Date.now();
+      ui.charging = true;
+      el.classList.add("hot");
+      el.textContent = "HOLD… release to throw";
+    };
+    var end = function () {
+      if (!ui.charging) return;
+      ui.charging = false;
+      el.classList.remove("hot");
+      var held = (Date.now() - startT) / 1000;
+      if (held < 0.18) { el.textContent = "HOLD TO THROW — or flick the alley at the wall"; return; }
+      decideAndThrow(Math.min(1.6, 0.55 + held));
+    };
+    el.onpointerup = end;
+    el.onpointerleave = end;
+    el.onpointercancel = end;
+  }
+
+  function renderHandoff() {
+    var on = ui.screen === "handoff";
+    $("handoff").className = "overlay" + (on ? " on" : "");
+    if (!on) return;
+    var p = SD.player(state, ui.targetId) || SD.shooter(state);
+    $("handName").textContent = p.name;
+    $("handStack").textContent = money(p.bankroll) + " in the stack";
+    $("handWhy").textContent = ui.reason;
+    $("handGo").textContent = "I'M " + p.name.toUpperCase();
+  }
+
+  function renderPicker() {
+    var on = ui.screen === "pick";
+    $("picker").className = "overlay" + (on ? " on" : "");
+    if (!on) return;
+    var grid = $("pickGrid");
+    grid.innerHTML = "";
+    state.players.forEach(function (p) {
+      var b = document.createElement("button");
+      var exp = SD.tableExposure(state).filter(function (r) { return r.id === p.id; })[0];
+      b.innerHTML = "<strong>" + p.name + "</strong><br>" + money(p.bankroll) +
+        (p.id === state.shooterId ? " · rocks" : "") +
+        (exp && exp.onTable ? "<br>on table " + money(exp.onTable) : "");
+      b.onclick = function () { openHandoff(p.id, ui.reason); };
+      grid.appendChild(b);
+    });
+    if (SD.canRoll(state)) {
+      var thrower = document.createElement("button");
+      thrower.className = "primary";
+      thrower.style.gridColumn = "1 / -1";
+      thrower.textContent = "Pass to " + SD.playerName(state, state.shooterId) + " to throw";
+      thrower.onclick = function () {
+        openHandoff(state.shooterId, "Line's faded. Flick it at the wall.");
+      };
+      grid.appendChild(thrower);
+    }
+  }
+
+  function renderPayout() {
+    var on = ui.screen === "payout";
+    $("payout").className = "overlay" + (on ? " on" : "");
+    var s = state.lastSettlement;
+    if (!on || !s) return;
+    $("payTotal").textContent = s.d1 + " + " + s.d2 + " = " + s.total + (s.hard ? " hard" : "");
+    $("payHead").textContent = s.headline;
+    var html = "";
+    (s.lines || []).forEach(function (ln) {
+      html += '<div class="ln ' + (ln.cls || "") + '">' + ln.text + "</div>";
+    });
+    SD.tableExposure(state).forEach(function (row) {
+      var d = (s.deltas && s.deltas[row.id]) || 0;
+      html += '<div class="ln ' + (d > 0 ? "win" : "") + '">' + row.name + " now " + money(row.bankroll) +
+        (d ? " · +" + money(d) : "") + (row.onTable ? " · still " + money(row.onTable) + " down" : "") + "</div>";
+    });
+    $("payBody").innerHTML = html || "<div class='ln'>Money stays in the street.</div>";
+  }
+
+  function renderCrewSheet() {
     var box = $("crewList");
+    if (!box) return;
     box.innerHTML = "";
     state.players.forEach(function (p) {
       var row = document.createElement("div");
       row.className = "crew-row";
-      row.innerHTML = '<input value="' + p.name.replace(/"/g, "") + '" maxlength="16" aria-label="Name">' +
-        '<span class="badge">' + money(p.bankroll) + "</span>" +
+      row.innerHTML = '<input value="' + p.name.replace(/"/g, "") + '" maxlength="16">' +
+        '<span>' + money(p.bankroll) + "</span>" +
         '<button data-rebuy="' + p.id + '">+$50</button>' +
         '<button class="ghost" data-boot="' + p.id + '">Boot</button>';
       row.querySelector("input").onchange = function (e) {
         apply(SD.renamePlayer(state, p.id, e.target.value));
-        renderCrew();
+        renderCrewSheet();
       };
       box.appendChild(row);
     });
   }
 
   function render() {
-    renderChips();
-    renderPlayers();
-    renderBills();
-    renderChalk();
+    $("muteBtn").textContent = audio.muted ? "🔇" : "🔊";
     renderBanner();
-    renderSettlement();
-    renderHistory();
-    renderBets();
-    renderRoomTypes();
-    renderPreview();
-    setFace($("cube1"), lastFaces[0]);
-    setFace($("cube2"), lastFaces[1]);
+    renderCrewStrip();
+    renderTray();
+    renderHandoff();
+    renderPicker();
+    renderPayout();
+    $("hud").style.visibility = ui.screen === "play" || ui.screen === "handoff" ? "visible" : "visible";
   }
 
-  function offer(type) {
-    apply(SD.offerBet(state, state.actingId, type, stake));
-    snd("cash");
-  }
-
-  function throwDice() {
-    if (state.busy || !SD.canRoll(state)) return;
-    apply(SD.setBusy(state, true), true);
-    var dice = SD.rollDice();
-    lastFaces = dice;
-    haptic([12, 30, 12]);
-    snd("rattle");
-    if (reduceMotion) {
-      finishThrow(dice);
-      return;
+  $("handGo").onclick = function () { takePhone(ui.targetId); };
+  $("pickCancel").onclick = function () { ui.screen = "play"; render(); };
+  $("payNext").onclick = function () {
+    ui.undo = [];
+    ui.chips = [];
+    var reason = state.phase === "point"
+      ? "Point is " + state.point + ". Side action or throw again."
+      : SD.playerName(state, state.shooterId) + " still has the rocks. Post a fresh line.";
+    if (state.lastSettlement && state.lastSettlement.dicePassed) {
+      reason = SD.playerName(state, state.shooterId) + " catches the rocks. Post a line.";
     }
-    setFace($("cube1"), dice[0], true);
-    setFace($("cube2"), dice[1], true);
-    setTimeout(function () { snd("clack"); haptic(20); }, 420);
-    setTimeout(function () { finishThrow(dice); }, 820);
-  }
-
-  function finishThrow(dice) {
-    setFace($("cube1"), dice[0]);
-    setFace($("cube2"), dice[1]);
-    var res = SD.settleRoll(state, dice[0], dice[1]);
-    if (!res.ok) {
-      apply(SD.setBusy(state, false), true);
-      flash(res.error);
-      return;
-    }
-    state = res.state;
-    save();
-    render();
-    var r = res.settlement.result;
-    if (r === "natural" || r === "hit") { snd("win"); haptic([10, 40, 10]); }
-    else if (r === "craps" || r === "seven-out") { snd("lose"); haptic(40); }
-    else { snd("clack"); }
-  }
-
-  document.addEventListener("click", function () { ensureAudio(); }, { once: true });
-
-  $("postBtn").onclick = function () { if (apply(SD.postLine(state, state.actingId, stake))) snd("cash"); };
-  $("fadeBtn").onclick = function () { if (apply(SD.fadeLine(state, state.actingId, stake))) snd("cash"); };
-  $("cutBtn").onclick = function () { apply(SD.cutLine(state, state.actingId)); };
-  $("pullBtn").onclick = function () { apply(SD.pullLine(state, state.actingId)); };
-  $("rollBtn").onclick = throwDice;
+    openHandoff(state.shooterId, reason);
+  };
   $("muteBtn").onclick = function () {
     audio.muted = !audio.muted;
-    apply(SD.setMuted(state, audio.muted), true);
+    apply(SD.setMuted(state, audio.muted));
   };
   $("rulesBtn").onclick = function () { $("rulesSheet").classList.add("on"); };
-  $("crewBtn").onclick = function () { renderCrew(); $("crewSheet").classList.add("on"); };
-  $("addPlayerBtn").onclick = function () { apply(SD.addPlayer(state)); renderCrew(); };
+  $("crewBtn").onclick = function () { renderCrewSheet(); $("crewSheet").classList.add("on"); };
+  $("addPlayerBtn").onclick = function () { apply(SD.addPlayer(state)); renderCrewSheet(); };
   $("resetBtn").onclick = function () {
-    if (!confirm("Wipe the curb and start a fresh crew? Bankrolls go back to $200.")) return;
+    if (!confirm("Wipe the curb? Everyone goes back to $200 play money.")) return;
     state = SD.resetCrew();
-    lastFaces = [1, 1];
+    ui.undo = []; ui.chips = [];
     save();
-    render();
-    renderCrew();
+    if (scene && scene.resetDice) scene.resetDice();
+    openHandoff(state.shooterId, "Fresh crew. Dice has the rocks.");
+    renderCrewSheet();
   };
   document.querySelectorAll("[data-close]").forEach(function (b) {
     b.onclick = function () { $(b.getAttribute("data-close")).classList.remove("on"); };
   });
-  $("openBets").addEventListener("click", function (e) {
-    var cover = e.target.getAttribute("data-cover");
-    var cancel = e.target.getAttribute("data-cancel");
-    if (cover && apply(SD.coverBet(state, cover, state.actingId, 0))) snd("cash");
-    if (cancel) apply(SD.cancelBet(state, cancel, state.actingId));
-  });
   $("crewList").addEventListener("click", function (e) {
     var rebuy = e.target.getAttribute("data-rebuy");
     var boot = e.target.getAttribute("data-boot");
-    if (rebuy) { apply(SD.rebuy(state, rebuy, 50)); renderCrew(); }
-    if (boot) { apply(SD.removePlayer(state, boot)); renderCrew(); }
+    if (rebuy) { apply(SD.rebuy(state, rebuy, 50)); renderCrewSheet(); }
+    if (boot) { apply(SD.removePlayer(state, boot)); renderCrewSheet(); }
   });
+  document.addEventListener("click", function () { ensureAudio(); }, { once: true });
 
-  buildCube($("cube1"));
-  buildCube($("cube2"));
+  function make2D() {
+    $("gl").hidden = true;
+    $("fallback2d").hidden = false;
+    buildCube($("cube1"));
+    buildCube($("cube2"));
+    var faces = [1, 1];
+    function rot(n) {
+      return { 1: "rotateX(0) rotateY(0)", 2: "rotateX(-90deg)", 3: "rotateY(-90deg)", 4: "rotateY(90deg)", 5: "rotateX(90deg)", 6: "rotateY(180deg)" }[n];
+    }
+    function set(a, b, fly) {
+      [$("cube1"), $("cube2")].forEach(function (el, i) {
+        el.style.transition = reduceMotion ? "none" : "transform 0.7s cubic-bezier(.2,.7,.2,1)";
+        el.style.transform = fly
+          ? "translateY(-80px) rotateX(700deg) rotateY(520deg)"
+          : rot(i ? b : a);
+      });
+    }
+    set(1, 1, false);
+    var box = $("fallback2d");
+    var flick2 = { down: false, y: 0, t: 0 };
+    box.style.touchAction = "none";
+    box.addEventListener("pointerdown", function (e) {
+      if (ui.screen !== "play") return;
+      flick2.down = true; flick2.y = e.clientY; flick2.t = Date.now();
+    });
+    window.addEventListener("pointerup", function (e) {
+      if (!flick2.down) return;
+      flick2.down = false;
+      if (ui.screen !== "play" || !canThisPlayerRoll()) return;
+      var dy = flick2.y - e.clientY;
+      var dt = Math.max(16, Date.now() - flick2.t);
+      if (dy > 48) decideAndThrow(Math.min(1.7, dy / 180 + 400 / dt));
+    });
+    return {
+      sync: function () {},
+      resetDice: function () { faces = [1, 1]; set(1, 1, false); },
+      throw: function (d1, d2, power, done) {
+        faces = [d1, d2];
+        if (reduceMotion) { set(d1, d2, false); done(); return; }
+        set(d1, d2, true);
+        setTimeout(function () { snd("clack"); haptic(18); }, 380);
+        setTimeout(function () { set(d1, d2, false); done(); }, 820);
+      }
+    };
+  }
+
+  function buildCube(el) {
+    el.innerHTML = "";
+    var map = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+    [1, 2, 3, 4, 5, 6].forEach(function (n) {
+      var f = document.createElement("div");
+      f.className = "face f" + n;
+      for (var i = 0; i < 9; i++) {
+        var c = document.createElement("div");
+        if (map[n].indexOf(i) >= 0) c.className = "dot";
+        f.appendChild(c);
+      }
+      el.appendChild(f);
+    });
+  }
+
+  function make3D(THREE) {
+    $("gl").hidden = false;
+    $("fallback2d").hidden = true;
+    var canvas = $("gl");
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.shadowMap.enabled = true;
+    if (THREE.ACESFilmicToneMapping) renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    var scene3 = new THREE.Scene();
+    scene3.background = new THREE.Color(0x141210);
+    scene3.fog = new THREE.Fog(0x141210, 10, 22);
+    var camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 40);
+    camera.position.set(0, 4.6, 7.2);
+    camera.lookAt(0, 0.3, -0.6);
+
+    scene3.add(new THREE.HemisphereLight(0xc8d4e8, 0x2a2018, 0.7));
+    var sun = new THREE.DirectionalLight(0xffe2b0, 0.85);
+    sun.position.set(-3, 8, 4);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    scene3.add(sun);
+    var lamp = new THREE.PointLight(0xffb067, 1.1, 16);
+    lamp.position.set(2.2, 3.4, 1.2);
+    scene3.add(lamp);
+
+    function canvasTex(draw, size) {
+      var c = document.createElement("canvas");
+      c.width = c.height = size || 512;
+      draw(c.getContext("2d"), c.width);
+      var t = new THREE.CanvasTexture(c);
+      if (THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+      return t;
+    }
+
+    var asphalt = canvasTex(function (ctx, s) {
+      ctx.fillStyle = "#2a2924";
+      ctx.fillRect(0, 0, s, s);
+      for (var i = 0; i < 2400; i++) {
+        ctx.fillStyle = "rgba(" + (20 + ((i * 17) % 40)) + "," + (18 + ((i * 13) % 36)) + "," + (14 + ((i * 11) % 30)) + "," + (0.15 + (i % 5) * 0.05) + ")";
+        ctx.fillRect((i * 47) % s, (i * 31) % s, 2, 2);
+      }
+      ctx.strokeStyle = "rgba(243,239,227,0.28)";
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(s * 0.5, s * 0.62, 54, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "rgba(243,239,227,0.55)";
+      ctx.font = "bold 42px sans-serif";
+      ctx.textAlign = "center";
+      [4, 5, 6, 8, 9, 10].forEach(function (n, i) {
+        ctx.save();
+        ctx.translate(70 + i * 64, 150);
+        ctx.rotate((i % 2 ? 0.08 : -0.08));
+        ctx.fillText(String(n), 0, 0);
+        ctx.restore();
+      });
+      ctx.fillText("C", 150, 230);
+      ctx.fillText("E", 360, 230);
+    }, 512);
+    asphalt.wrapS = asphalt.wrapT = THREE.RepeatWrapping;
+
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(16, 18), new THREE.MeshStandardMaterial({ map: asphalt, roughness: 0.95 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene3.add(ground);
+
+    var brick = canvasTex(function (ctx, s) {
+      ctx.fillStyle = "#c9b49a"; ctx.fillRect(0, 0, s, s);
+      for (var y = 0; y < 16; y++) {
+        for (var x = 0; x < 10; x++) {
+          ctx.fillStyle = y % 2 ? "#6b3228" : "#7a3a2c";
+          var ox = (y % 2) * 26;
+          ctx.fillRect(x * 52 + ox, y * 32, 48, 28);
+        }
+      }
+    }, 256);
+    brick.wrapS = brick.wrapT = THREE.RepeatWrapping;
+    brick.repeat.set(3, 2);
+    var wall = new THREE.Mesh(new THREE.BoxGeometry(12, 3.2, 0.4), new THREE.MeshStandardMaterial({ map: brick, roughness: 0.85 }));
+    wall.position.set(0, 1.6, -5.1);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene3.add(wall);
+
+    var curb = new THREE.Mesh(new THREE.BoxGeometry(12, 0.28, 0.7), new THREE.MeshStandardMaterial({ color: 0xcfc6b3, roughness: 0.8 }));
+    curb.position.set(0, 0.14, 3.15);
+    curb.castShadow = true;
+    scene3.add(curb);
+
+    var potRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.7, 32), new THREE.MeshStandardMaterial({ color: 0xe8c36a, side: THREE.DoubleSide }));
+    potRing.rotation.x = -Math.PI / 2;
+    potRing.position.set(0, 0.02, 0.35);
+    scene3.add(potRing);
+
+    var cash = new THREE.Group();
+    cash.position.set(0, 0.06, 0.35);
+    scene3.add(cash);
+    function rebuildCash(amount) {
+      while (cash.children.length) cash.remove(cash.children[0]);
+      var n = amount <= 0 ? 0 : Math.min(10, 2 + Math.floor(amount / 12));
+      for (var i = 0; i < n; i++) {
+        var bill = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.2), new THREE.MeshStandardMaterial({ color: 0x3f7a52 }));
+        bill.position.set((i % 3) * 0.08 - 0.08, 0.02 * i, (i % 2) * 0.05);
+        bill.rotation.y = (i * 0.18) - 0.3;
+        bill.castShadow = true;
+        cash.add(bill);
+      }
+    }
+
+    var puck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 20), new THREE.MeshStandardMaterial({ color: 0xf3efe3 }));
+    puck.position.set(0, 0.04, -1.7);
+    puck.visible = false;
+    scene3.add(puck);
+    var chalkX = { 4: -2.2, 5: -1.3, 6: -0.4, 8: 0.5, 9: 1.4, 10: 2.3 };
+
+    function pipTex(n) {
+      return canvasTex(function (ctx, s) {
+        ctx.fillStyle = "#f6f0e4";
+        ctx.fillRect(0, 0, s, s);
+        ctx.strokeStyle = "#d7cbb4";
+        ctx.lineWidth = 18;
+        ctx.strokeRect(10, 10, s - 20, s - 20);
+        var spots = { 1: [[0.5, 0.5]], 2: [[0.28, 0.28], [0.72, 0.72]], 3: [[0.28, 0.28], [0.5, 0.5], [0.72, 0.72]], 4: [[0.28, 0.28], [0.72, 0.28], [0.28, 0.72], [0.72, 0.72]], 5: [[0.28, 0.28], [0.72, 0.28], [0.5, 0.5], [0.28, 0.72], [0.72, 0.72]], 6: [[0.28, 0.24], [0.72, 0.24], [0.28, 0.5], [0.72, 0.5], [0.28, 0.76], [0.72, 0.76]] }[n];
+        ctx.fillStyle = "#1c1610";
+        spots.forEach(function (p) {
+          ctx.beginPath();
+          ctx.arc(p[0] * s, p[1] * s, s * 0.09, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }, 256);
+    }
+    function dieMesh() {
+      var mats = [
+        new THREE.MeshStandardMaterial({ map: pipTex(3) }),
+        new THREE.MeshStandardMaterial({ map: pipTex(4) }),
+        new THREE.MeshStandardMaterial({ map: pipTex(1) }),
+        new THREE.MeshStandardMaterial({ map: pipTex(6) }),
+        new THREE.MeshStandardMaterial({ map: pipTex(2) }),
+        new THREE.MeshStandardMaterial({ map: pipTex(5) })
+      ];
+      var m = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.42), mats);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    var dieA = dieMesh();
+    var dieB = dieMesh();
+    scene3.add(dieA); scene3.add(dieB);
+
+    function faceUp(n, twist) {
+      var e = new THREE.Euler();
+      if (n === 1) e.set(0, twist, 0);
+      else if (n === 6) e.set(Math.PI, twist, 0);
+      else if (n === 2) e.set(-Math.PI / 2, twist, 0);
+      else if (n === 5) e.set(Math.PI / 2, twist, 0);
+      else if (n === 3) e.set(0, 0, -Math.PI / 2);
+      else e.set(0, 0, Math.PI / 2);
+      var q = new THREE.Quaternion().setFromEuler(e);
+      if (n === 3 || n === 4) {
+        q.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), twist));
+      }
+      return q;
+    }
+
+    function park(a, b) {
+      dieA.position.set(-0.38, 0.22, 1.4);
+      dieB.position.set(0.38, 0.22, 1.4);
+      dieA.quaternion.copy(faceUp(a || 1, -0.2));
+      dieB.quaternion.copy(faceUp(b || 1, 0.25));
+    }
+    park(1, 1);
+
+    var flying = null;
+    var last = [1, 1];
+
+    function startThrow(d1, d2, power, done) {
+      last = [d1, d2];
+      if (reduceMotion) {
+        park(d1, d2);
+        done();
+        return;
+      }
+      var pwr = Math.max(0.45, Math.min(1.7, power || 1));
+      flying = {
+        t: 0,
+        done: done,
+        settled: false,
+        dice: [
+          body(dieA, -0.25, pwr, d1, -0.3),
+          body(dieB, 0.28, pwr, d2, 0.35)
+        ]
+      };
+    }
+
+    function body(mesh, x, pwr, face, twist) {
+      mesh.position.set(x, 0.55, 2.6);
+      return {
+        mesh: mesh,
+        pos: mesh.position.clone(),
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, 2.1 + pwr, -7.2 * pwr - Math.random()),
+        spin: new THREE.Vector3((Math.random() - 0.5) * 18, (Math.random() - 0.5) * 16, (Math.random() - 0.5) * 14),
+        face: face,
+        twist: twist,
+        target: faceUp(face, twist),
+        bounced: false
+      };
+    }
+
+    function step(dt) {
+      if (!flying) return;
+      flying.t += dt;
+      var slow = flying.t > 0.95;
+      flying.dice.forEach(function (d) {
+        if (flying.settled) {
+          d.mesh.quaternion.slerp(d.target, 1 - Math.pow(0.0008, dt));
+          d.pos.y += (0.22 - d.pos.y) * (1 - Math.pow(0.002, dt));
+          d.mesh.position.copy(d.pos);
+          return;
+        }
+        d.vel.y -= 14 * dt;
+        d.pos.addScaledVector(d.vel, dt);
+        var q = new THREE.Quaternion().setFromEuler(new THREE.Euler(d.spin.x * dt, d.spin.y * dt, d.spin.z * dt));
+        d.mesh.quaternion.multiply(q);
+        if (d.pos.y < 0.22) {
+          d.pos.y = 0.22;
+          if (d.vel.y < 0) {
+            d.vel.y *= -0.38;
+            d.vel.x *= 0.82;
+            d.vel.z *= 0.82;
+            d.spin.multiplyScalar(0.72);
+            if (Math.abs(d.vel.y) < 0.7) d.vel.y = 0;
+            snd("clack");
+          }
+        }
+        if (d.pos.z < -4.7) {
+          d.pos.z = -4.7;
+          d.vel.z *= -0.52;
+          d.spin.x += 6;
+          d.bounced = true;
+          snd("clack");
+          haptic(16);
+        }
+        if (d.pos.z > 2.85) { d.pos.z = 2.85; d.vel.z *= -0.4; }
+        if (d.pos.x > 2.3) { d.pos.x = 2.3; d.vel.x *= -0.5; }
+        if (d.pos.x < -2.3) { d.pos.x = -2.3; d.vel.x *= -0.5; }
+        d.mesh.position.copy(d.pos);
+      });
+      var speed = flying.dice[0].vel.length() + flying.dice[1].vel.length();
+      if (!flying.settled && (flying.t > 2.1 || (slow && speed < 1.1 && flying.dice[0].bounced))) {
+        flying.settled = true;
+        flying.dice.forEach(function (d) {
+          d.vel.set(0, 0, 0);
+          d.spin.set(0, 0, 0);
+        });
+      }
+      if (flying.settled && flying.t > 2.55) {
+        flying.dice.forEach(function (d) { d.mesh.quaternion.copy(d.target); });
+        var cb = flying.done;
+        flying = null;
+        cb();
+      }
+    }
+
+    var flick = { down: false, y: 0, t: 0 };
+    canvas.style.touchAction = "none";
+    canvas.addEventListener("pointerdown", function (e) {
+      if (ui.screen !== "play") return;
+      flick.down = true; flick.y = e.clientY; flick.t = Date.now();
+    });
+    window.addEventListener("pointerup", function (e) {
+      if (!flick.down) return;
+      flick.down = false;
+      if (ui.screen !== "play" || !canThisPlayerRoll()) return;
+      var dy = flick.y - e.clientY;
+      var dt = Math.max(16, Date.now() - flick.t);
+      if (dy > 48) decideAndThrow(Math.min(1.7, dy / 180 + 400 / dt));
+    });
+
+    function sync(st) {
+      rebuildCash(st.line.amount + SD.fadedTotal(st));
+      if (st.phase === "point" && chalkX[st.point] != null) {
+        puck.visible = true;
+        puck.position.set(chalkX[st.point], 0.04, -2.05);
+      } else puck.visible = false;
+    }
+
+    function onResize() {
+      var w = window.innerWidth, h = window.innerHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    window.addEventListener("resize", onResize);
+
+    var lastT = performance.now();
+    function loop(now) {
+      var dt = Math.min(0.033, (now - lastT) / 1000);
+      lastT = now;
+      step(dt);
+      renderer.render(scene3, camera);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    return {
+      sync: sync,
+      resetDice: function () { park(1, 1); },
+      throw: startThrow
+    };
+  }
+
   load();
+  scene = force2D ? make2D() : make3D(THREE);
   render();
-})();
+  if (scene.sync) scene.sync(state);
+};
+</script>
+<script type="module">
+  try {
+    const THREE = await import("three");
+    window.__streetStart(THREE);
+  } catch (err) {
+    console.warn("Three.js unavailable, 2D curb instead", err);
+    window.__streetStart(null);
+  }
+</script>
+<script>
+  setTimeout(function () {
+    if (!window.__streetStarted) window.__streetStart(null);
+  }, 2800);
 </script>
 </body>
 </html>

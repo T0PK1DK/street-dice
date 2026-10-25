@@ -386,6 +386,48 @@ test("cannot remove a player who still has money in the pot", function () {
   assert.strictEqual(s.players.length, 4);
 });
 
+test("unpost / unfade refunds only uncovered chips and keeps the books even", function () {
+  var s = game();
+  var start = money(s);
+  s = mustOk(SD.postLine(s, "p1", 40));
+  s = mustOk(SD.unpostLine(s, "p1", 15));
+  assert.strictEqual(s.line.amount, 25);
+  assert.strictEqual(SD.player(s, "p1").bankroll, 175);
+  s = mustOk(SD.fadeLine(s, "p2", 10));
+  assert.strictEqual(SD.unpostLine(s, "p1", 20).ok, true);
+  s = SD.unpostLine(s, "p1", 20).state;
+  assert.strictEqual(s.line.amount, 10);
+  assert.strictEqual(SD.canRoll(s), true);
+  s = mustOk(SD.unfadeLine(s, "p2", 10));
+  assert.strictEqual(SD.fadedTotal(s), 0);
+  assert.strictEqual(SD.player(s, "p2").bankroll, 200);
+  assert.strictEqual(money(s), start);
+});
+
+test("uncover turns a live room ticket back into an open fade", function () {
+  var s = game();
+  s = mustOk(SD.offerBet(s, "p2", "next7", 10));
+  var id = s.bets[0].id;
+  s = mustOk(SD.coverBet(s, id, "p3", 50));
+  assert.strictEqual(s.bets[0].status, "live");
+  s = mustOk(SD.uncoverBet(s, id, "p3", 50));
+  assert.strictEqual(s.bets[0].status, "open");
+  assert.strictEqual(s.bets[0].covers.length, 0);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 200);
+});
+
+test("tableExposure shows each soul's money on the curb", function () {
+  var s = game();
+  s = mustOk(SD.postLine(s, "p1", 20));
+  s = mustOk(SD.fadeLine(s, "p2", 20));
+  s = mustOk(SD.offerBet(s, "p3", "craps", 5));
+  var rows = SD.tableExposure(s);
+  assert.strictEqual(rows[0].line, 20);
+  assert.strictEqual(rows[1].fade, 20);
+  assert.strictEqual(rows[2].room, 5);
+  assert.strictEqual(rows[3].onTable, 0);
+});
+
 test("preview payouts for a $10 hit on 6", function () {
   var prev = SD.previewPayout("hits", 10, 6);
   assert.ok(prev.ok);

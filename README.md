@@ -1,10 +1,10 @@
 # Street Dice
 
-Casual player-banked street craps for friends. No house, no build, no server required.
+Casual player-banked street craps for friends on one phone. No house, no real payments, no build step.
 
 ## Play
 
-Open `index.html` in a browser (keep `engine.js` next to it). Or from this folder:
+Keep `index.html` and `engine.js` together. Open the HTML file, or:
 
 ```bash
 python3 -m http.server 4173
@@ -12,12 +12,18 @@ python3 -m http.server 4173
 
 Then visit `http://localhost:4173`.
 
-- Tap a player to hold their stack (pass-and-play)
-- Shooter posts the line; everyone else fades until it's covered
-- Optional room bets: one player offers, another covers at true odds
-- Throw at the wall
+The table is a **Three.js** scene (MIT, pinned CDN `three@0.160.1`). If WebGL or the CDN fails, it falls back to a 2D curb. `?2d=1` forces the fallback. `prefers-reduced-motion` skips the tumble and lands the decided faces immediately.
 
-Come-out: 7 or 11 wins the line, 2/3/12 the fade scoops it, anything else is the point. Then hit the point before a 7. Seven-out and the dice walk. Craps on the come-out loses the line, but the shooter keeps the rocks.
+1. Pass the phone — the handoff names who is up
+2. Shooter stacks chips ($1 / $5 / $10 / $20 / custom), undo, confirm to post the line
+3. Pass to a fader. They fade until the line is covered
+4. Optional room tickets: offer, pass, cover at true odds
+5. Shooter flicks the alley at the wall, or holds-and-releases the throw bar
+6. Read the payout card, then pass again
+
+The roll is decided by the engine *before* the dice move. The animation only lands on those faces.
+
+Come-out: 7 or 11 wins the line, 2/3/12 the fade scoops it, anything else is the point. Then hit the point before a 7. Seven-out and the dice walk. Craps on the come-out loses the line, shooter keeps the rocks.
 
 ## Room odds
 
@@ -29,10 +35,10 @@ Crew and bankrolls save in this browser (`street-dice-v2`). Reset is in Crew.
 
 ## Tests
 
-Rules and settlement live in `engine.js` so Node can run them without a bundler.
+Rules, settlement, and chip undo live in `engine.js` so Node can run them without a bundler.
 
 ```bash
 npm test
 ```
 
-MIT. Sounds are synthesized in the page. No third-party assets.
+MIT. Sounds are synthesized in the page. Three.js is MIT via the pinned CDN. No other third-party assets.
