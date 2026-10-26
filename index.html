@@ -368,6 +368,7 @@ window.__streetStart = function (THREE) {
   var saveTimer = null;
     var throwing = false;
     var holdTimer = null;
+    var calloutTimer = null;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -610,9 +611,10 @@ window.__streetStart = function (THREE) {
       else if (r === "craps" || r === "seven-out") { snd("lose"); haptic(40); }
       else snd("clack");
       throwing = false;
+      clearTimeout(calloutTimer);
       showCallout(res.settlement);
       if (scene.sync) scene.sync(state);
-      setTimeout(function () {
+      calloutTimer = setTimeout(function () {
         hideCallout();
         ui.screen = "payout";
         render();
