@@ -179,6 +179,38 @@
     return pair[0] + ":" + pair[1];
   }
 
+  function betKind(type) {
+    var spec = BET_TYPES[type];
+    if (!spec) return "Side";
+    return spec.group === "point" ? "Room" : "Side";
+  }
+
+  function rollNick(d1, d2) {
+    var total = d1 + d2;
+    var hard = isHard(d1, d2);
+    if (total === 2) return "Snake eyes";
+    if (total === 3) return "Ace-deuce";
+    if (total === 11) return "Yo-leven";
+    if (total === 12) return "Boxcars";
+    if (total === 7) return "Seven";
+    if (hard && (total === 4 || total === 6 || total === 8 || total === 10)) return "Hard " + total;
+    if (total === 4 || total === 6 || total === 8 || total === 10) return "Easy " + total;
+    return String(total);
+  }
+
+  function rollCallout(d1, d2, result, point) {
+    var total = d1 + d2;
+    var nick = rollNick(d1, d2);
+    var line = nick + " · " + total;
+    if (result === "natural") line = nick + " — pass";
+    else if (result === "craps") line = nick + " — craps";
+    else if (result === "point") line = nick + " — point is " + total;
+    else if (result === "hit") line = nick + " — point!";
+    else if (result === "seven-out") line = nick + " — seven out";
+    else if (result === "idle" && point) line = nick + " · looking for " + point;
+    return { total: total, nick: nick, line: line, result: result || "" };
+  }
+
   function coverForStake(type, stake, point) {
     stake = intAmt(stake);
     if (stake === null) return { ok: false, error: "Need a whole-dollar stake." };
@@ -512,6 +544,9 @@
       }
     }
     if (!found) return fail(state, "You don't have a fade down.");
+    if (state.phase !== "comeout") {
+      return fail(state, "Line's locked once the point is up. That fade stays until the 7 or the number.");
+    }
     amount = intAmt(amount);
     if (amount === null || amount <= 0) amount = found.amount;
     var take = Math.min(amount, found.amount);
@@ -787,6 +822,27 @@
     }
   }
 
+  function refundUnmatchedHardways(state, settlement) {
+    for (var i = 0; i < state.bets.length; i++) {
+      var bet = state.bets[i];
+      if (bet.status === "done") continue;
+      if (BET_TYPES[bet.type].group !== "hard") continue;
+      if (bet.covers.length > 0) continue;
+      var leftover = bet.stake - bet.refundedStake;
+      if (leftover > 0) {
+        pay(
+          state,
+          settlement,
+          bet.fromId,
+          leftover,
+          playerName(state, bet.fromId) + " unmatched " + BET_TYPES[bet.type].label + " comes down",
+          "info"
+        );
+      }
+      bet.status = "done";
+    }
+  }
+
   function pruneBets(state) {
     var keep = [];
     for (var i = 0; i < state.bets.length; i++) {
@@ -850,10 +906,12 @@
         settlement.result = "natural";
         settlement.headline = "Natural " + total + " — " + playerName(state, state.shooterId) + " scoops the pile.";
         settleLinePass(state, settlement);
+        refundUnmatchedHardways(state, settlement);
       } else if (isCraps(total)) {
         settlement.result = "craps";
         settlement.headline = "Craps " + total + ". Fade takes the pile. " + playerName(state, state.shooterId) + " keeps the rocks.";
         settleLineFade(state, settlement);
+        refundUnmatchedHardways(state, settlement);
       } else {
         state.point = total;
         state.phase = "point";
@@ -867,6 +925,7 @@
         settlement.headline = playerName(state, state.shooterId) + " hit the " + state.point + "! Pass takes it, shooter keeps the rocks.";
         settleLinePass(state, settlement);
         settleHitsDont(state, settlement, true);
+        refundUnmatchedHardways(state, settlement);
         state.point = null;
         state.phase = "comeout";
       } else if (total === 7) {
@@ -874,6 +933,7 @@
         settlement.headline = "Seven out. Fade takes the pile. Dice move on.";
         settleLineFade(state, settlement);
         settleHitsDont(state, settlement, false);
+        refundUnmatchedHardways(state, settlement);
         state.point = null;
         state.phase = "comeout";
         passDice(state);
@@ -884,6 +944,8 @@
         settlement.headline = total + "… still looking for " + state.point + ". No seven.";
       }
     }
+
+    settlement.callout = rollCallout(d1, d2, settlement.result, settlement.point);
 
     pruneBets(state);
     state.lastSettlement = settlement;
@@ -942,6 +1004,7 @@
       names.push(playerName(state, bet.covers[c].playerId) + " $" + bet.covers[c].amount);
     }
     return {
+      kind: betKind(bet.type),
       title: spec.label + (bet.point ? " on " + bet.point : ""),
       odds: oddsLabel(bet.type, bet.point || 4),
       from: playerName(state, bet.fromId),
@@ -1015,6 +1078,9 @@
     playerName: playerName,
     shooter: shooter,
     describeBet: describeBet,
+    betKind: betKind,
+    rollNick: rollNick,
+    rollCallout: rollCallout,
     coverersSummary: coverersSummary,
     escrowTotal: escrowTotal,
     bankSum: bankSum,

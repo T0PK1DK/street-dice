@@ -110,10 +110,9 @@
   .ticket { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; font-size: 0.86rem; border-top: 1px solid var(--line); }
   .overlay {
     position: fixed; inset: 0; background: rgba(6,5,4,0.88);
-    display: none; flex-direction: column; justify-content: center; align-items: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
     padding: 24px 18px calc(var(--safe-b) + 20px); text-align: center; z-index: 8;
   }
-  .overlay.on { display: flex; }
   .overlay h2 { font-size: 0.8rem; letter-spacing: 0.22em; color: var(--gold); }
   .overlay .big { font-size: clamp(2.4rem, 12vw, 4rem); font-weight: 800; margin: 8px 0; }
   .overlay p { color: var(--muted); max-width: 26rem; line-height: 1.4; }
@@ -134,8 +133,91 @@
   .panel ul { padding-left: 18px; margin: 8px 0 12px; }
   .crew-row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
   .crew-row input { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #2b271f; padding: 0 10px; }
+  .chrome { display: flex; flex-direction: column; }
+  .who { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .who .bank { color: var(--gold); font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em; }
+  .seat .stk { font-size: 1.12rem; font-weight: 800; }
+  .chips button { transition: transform 0.08s ease; }
+  .chips button:active { transform: scale(0.94); }
+  .chips button[data-n="1"] { background: #4a453c; }
+  .chips button[data-n="5"] { background: #6b3228; }
+  .chips button[data-n="10"] { background: #2a4060; }
+  .chips button[data-n="20"] { background: #2f5a3a; }
+  .kind { display: inline-block; font-size: 0.64rem; letter-spacing: 0.16em; color: var(--gold); font-weight: 800; }
+  .tickets-live { max-height: 88px; overflow: auto; margin-top: 6px; font-size: 0.8rem; color: var(--muted); }
+  .overlay {
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0.22s ease;
+  }
+  .overlay.on { display: flex; opacity: 1; visibility: visible; pointer-events: auto; }
+  .overlay .role { color: var(--gold); letter-spacing: 0.14em; font-size: 0.78rem; text-transform: uppercase; }
+  .callout {
+    position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%) scale(0.88);
+    opacity: 0; pointer-events: none; z-index: 6; text-align: center;
+    text-shadow: 0 6px 28px #000; transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+  .callout.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .callout .nick { font-size: clamp(2.1rem, 9vw, 4.3rem); font-weight: 800; letter-spacing: 0.04em; line-height: 0.95; }
+  .callout .sum { margin-top: 6px; font-size: 1.05rem; color: var(--gold); letter-spacing: 0.16em; font-weight: 700; }
+  .setup-list { width: min(420px, 100%); text-align: left; margin: 12px 0 8px; }
+  .setup-list input { width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: #2b271f; padding: 0 12px; margin: 6px 0; }
+  .setup-bank { margin: 8px 0 14px; }
+  .sheet { transition: opacity 0.2s ease; }
+  @keyframes alley-tumble {
+    0% { transform: translateY(24px) rotateX(0) rotateY(0); }
+    32% { transform: translateY(-96px) rotateX(640deg) rotateY(420deg); }
+    58% { transform: translateY(10px) rotateX(920deg) rotateY(580deg); }
+    76% { transform: translateY(-20px) rotateX(1040deg) rotateY(680deg); }
+    100% { transform: translateY(0) rotateX(1100deg) rotateY(740deg); }
+  }
+  @media (orientation: landscape) and (max-height: 560px) {
+    .hud { flex-direction: row; align-items: stretch; }
+    .chrome {
+      width: min(228px, 34vw);
+      background: linear-gradient(90deg, rgba(0,0,0,0.62), transparent);
+      padding-bottom: var(--safe-b);
+      min-width: 0;
+    }
+    header {
+      flex-direction: column; align-items: flex-start; gap: 6px;
+      background: none; padding: calc(var(--safe-t) + 4px) 8px 4px;
+    }
+    h1 { font-size: 0.98rem; }
+    .iconrow button { min-width: 48px; min-height: 48px; }
+    .banner { margin: 0 8px; padding: 6px 8px; }
+    .crew {
+      flex-direction: column; overflow-x: hidden; overflow-y: auto;
+      flex: 1; padding: 6px 8px; gap: 6px;
+    }
+    .seat { min-width: 0; width: 100%; min-height: 58px; }
+    .grow { display: none; }
+    .tray {
+      width: min(46vw, 430px);
+      max-height: 100%;
+      overflow-y: auto;
+      border-top: 0;
+      border-left: 1px solid var(--line);
+      padding: 8px 10px calc(var(--safe-b) + 8px);
+    }
+    .chips button { min-width: 52px; min-height: 52px; }
+    .modes button, .row button { min-height: 48px; }
+    #throwGrip { min-height: 58px; }
+    .overlay { padding: 12px 18px calc(var(--safe-b) + 12px); }
+    .overlay .big { font-size: clamp(1.8rem, 7vw, 3rem); }
+    .callout { top: 46%; left: 42%; }
+    .pickgrid { grid-template-columns: 1fr 1fr 1fr; width: min(640px, 100%); }
+  }
+  @media (min-width: 960px) and (min-height: 700px) {
+    header, .banner, .crew { max-width: 1100px; width: calc(100% - 24px); margin-left: auto; margin-right: auto; }
+    .tray {
+      max-width: 760px; width: 100%; margin: 0 auto;
+      border-radius: 22px 22px 0 0; border: 1px solid var(--line);
+    }
+    .chips button { min-width: 72px; min-height: 60px; }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .cube { transition: none !important; }
+    .cube { transition: none !important; animation: none !important; }
+    .overlay, .callout, .sheet { transition: none !important; }
   }
 </style>
 </head>
@@ -155,26 +237,44 @@
   </div>
 
   <div class="hud" id="hud">
-    <header>
-      <div>
-        <span class="tag">PASS-AND-PLAY · PLAY MONEY</span>
-        <h1>STREET DICE</h1>
-      </div>
-      <div class="iconrow">
-        <button class="ghost" id="muteBtn" aria-label="Mute">🔊</button>
-        <button class="ghost" id="rulesBtn">Rules</button>
-        <button class="ghost" id="crewBtn">Crew</button>
-      </div>
-    </header>
-    <div class="banner" id="banner"><b id="phaseName">COME-OUT</b><span id="phaseDetail">Pass the phone. Post, fade, throw.</span></div>
-    <div class="crew" id="crewStrip"></div>
+    <div class="chrome">
+      <header>
+        <div>
+          <span class="tag">PASS-AND-PLAY · PLAY MONEY</span>
+          <h1>STREET DICE</h1>
+        </div>
+        <div class="iconrow">
+          <button class="ghost" id="muteBtn" aria-label="Mute">🔊</button>
+          <button class="ghost" id="rulesBtn">Rules</button>
+          <button class="ghost" id="crewBtn">Crew</button>
+        </div>
+      </header>
+      <div class="banner" id="banner"><b id="phaseName">COME-OUT</b><span id="phaseDetail">Pass the phone. Post, fade, throw.</span></div>
+      <div class="crew" id="crewStrip"></div>
+    </div>
     <div class="grow"></div>
     <div class="tray" id="tray"></div>
+  </div>
+
+  <div class="callout" id="callout" aria-live="polite"></div>
+
+  <div class="overlay" id="setup">
+    <h2>NEW WALL</h2>
+    <div class="big" style="font-size:clamp(1.6rem,6vw,2.4rem)">Name the crew</div>
+    <p>Play money only. Type who is at the curb — you'll settle in person. Need at least two.</p>
+    <div class="setup-list" id="setupList"></div>
+    <div class="row" style="width:min(420px,100%)">
+      <button id="setupAdd">Add a friend</button>
+      <button class="ghost" id="setupRemove">Fewer</button>
+    </div>
+    <p class="setup-bank" id="setupHint">Each stack starts at $200 play money.</p>
+    <button class="primary" id="setupGo">START THE WALL</button>
   </div>
 
   <div class="overlay" id="handoff">
     <h2>PASS THE PHONE</h2>
     <div class="big" id="handName">Curb</div>
+    <div class="role" id="handRole">Shooter · has the rocks</div>
     <div class="stack" id="handStack">$200</div>
     <p id="handWhy">You're up.</p>
     <button class="primary" id="handGo">I'M THEM</button>
@@ -200,10 +300,10 @@
       <h2>How this curb runs</h2>
       <ul>
         <li>Pass the phone. The handoff screen tells you who is up.</li>
-        <li>Stack chips ($1 / $5 / $10 / $20), undo, then confirm. Shooter posts the line; everybody else fades it.</li>
+        <li>Stack chips ($1 / $5 / $10 / $20), undo the last chip or last bet, or clear the handful, then confirm. Shooter posts the line; everybody else fades it.</li>
         <li>Come-out: 7 or 11 pass wins even money. 2, 3, or 12 the fade scoops it. Anything else is the point.</li>
         <li>Then hit that point before a 7. Seven-out and the dice walk. Craps lose the line, shooter keeps the rocks.</li>
-        <li>Room bets: one player offers, another covers at true odds — 4/10 2:1, 5/9 3:2, 6/8 6:5, next 7 5:1, 11 17:1, craps 8:1, hard 4/10 8:1, hard 6/8 10:1.</li>
+        <li>Room tickets (he hits / he don't) and side tickets (next 7/11, any craps, hardways): one player offers, another covers at true odds — 4/10 2:1, 5/9 3:2, 6/8 6:5, next 7 5:1, 11 17:1, craps 8:1, hard 4/10 8:1, hard 6/8 10:1.</li>
         <li>Flick the alley or hold-and-release the throw bar. The number is decided first; the dice just land on it.</li>
       </ul>
       <button class="primary" data-close="rulesSheet">Got it</button>
@@ -250,7 +350,8 @@ window.__streetStart = function (THREE) {
     chips: [],
     undo: [],
     charging: false,
-    charge: 0
+    charge: 0,
+    setupNames: ["Dice", "Curb", "Ace", "Wall"]
   };
   var audio = { ctx: null, muted: false };
   var scene = null;
@@ -269,14 +370,24 @@ window.__streetStart = function (THREE) {
 
   function money(n) { return "$" + n; }
   function pending() { return ui.chips.reduce(function (a, b) { return a + b; }, 0); }
-  function me() { return SD.player(state, state.actingId); }
+  function me() { return state ? SD.player(state, state.actingId) : null; }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c];
+    });
+  }
 
   function load() {
     try {
       var raw = localStorage.getItem(SD.SAVE_KEY);
       state = raw ? SD.hydrate(JSON.parse(raw)) : null;
     } catch (e) { state = null; }
-    if (!state) state = SD.createGame();
+    if (!state) {
+      ui.screen = "setup";
+      ui.setupNames = SD.DEFAULT_NAMES.slice();
+      audio.muted = false;
+      return;
+    }
     audio.muted = !!state.muted;
     ui.targetId = state.shooterId;
     ui.reason = SD.playerName(state, state.shooterId) + " has the rocks. Post a line.";
@@ -339,6 +450,7 @@ window.__streetStart = function (THREE) {
     if (kind === "cash") { beep(660, 0.07, "triangle", 0.05); setTimeout(function () { beep(880, 0.09, "triangle", 0.04); }, 70); }
     if (kind === "win") { beep(523, 0.1, "square", 0.05); setTimeout(function () { beep(659, 0.12, "square", 0.05); }, 90); }
     if (kind === "lose") { beep(140, 0.16, "sawtooth", 0.05); }
+    if (kind === "call") { beep(392, 0.09, "triangle", 0.06); setTimeout(function () { beep(523, 0.14, "triangle", 0.05); }, 80); }
   }
 
   function pushUndo(item) { ui.undo.push(item); }
@@ -350,7 +462,7 @@ window.__streetStart = function (THREE) {
     renderTray();
   }
   function undoChipOrBet() {
-    if (ui.chips.length) { ui.chips.pop(); renderTray(); return; }
+    if (ui.chips.length) { ui.chips.pop(); haptic(6); renderTray(); return; }
     var last = ui.undo.pop();
     if (!last) { toast("Nothing to undo."); return; }
     if (last.type === "post") apply(SD.unpostLine(state, last.playerId, last.amount));
@@ -359,12 +471,20 @@ window.__streetStart = function (THREE) {
     else if (last.type === "cover") apply(SD.uncoverBet(state, last.betId, last.playerId, last.amount));
   }
 
+  function clearChips() {
+    if (!ui.chips.length) { toast("No chips in hand."); return; }
+    ui.chips = [];
+    haptic(10);
+    renderTray();
+  }
+
   function defaultMode() {
     var p = me();
     if (!p) return "post";
     if (p.id === state.shooterId && state.phase === "comeout") return "post";
     if (p.id !== state.shooterId && SD.lineRemaining(state) > 0) return "fade";
     if (state.bets.some(function (b) { return b.status === "open" && b.fromId !== p.id; })) return "cover";
+    if (state.phase === "point") return "room";
     return "side";
   }
 
@@ -379,7 +499,7 @@ window.__streetStart = function (THREE) {
     } else if (ui.mode === "fade") {
       res = SD.fadeLine(state, p.id, amt);
       if (apply(res)) { pushUndo({ type: "fade", playerId: p.id, amount: res.faded }); ok = true; }
-    } else if (ui.mode === "side") {
+    } else if (ui.mode === "side" || ui.mode === "room") {
       res = SD.offerBet(state, p.id, ui.offerType, amt);
       if (apply(res)) { pushUndo({ type: "offer", playerId: p.id, betId: res.bet.id }); ok = true; }
     } else if (ui.mode === "cover") {
@@ -407,8 +527,8 @@ window.__streetStart = function (THREE) {
       openPicker("Line's faded. Side action or pass to the shooter to throw?");
       return;
     }
-    if (ui.mode === "side") {
-      openPicker("Ticket's hanging. Who covers it?");
+    if (ui.mode === "side" || ui.mode === "room") {
+      openPicker((ui.mode === "room" ? "Room" : "Side") + " ticket's hanging. Who covers it?");
       return;
     }
     if (ui.mode === "cover") {
@@ -456,6 +576,14 @@ window.__streetStart = function (THREE) {
     ui.undo = [];
     haptic([12, 28, 12]);
     snd("rattle");
+    if (!reduceMotion) {
+      var rattles = 0;
+      var rattleId = setInterval(function () {
+        rattles += 1;
+        snd("rattle");
+        if (rattles >= 5) clearInterval(rattleId);
+      }, 160);
+    }
     renderTray();
     scene.throw(dice[0], dice[1], power || 1, function () {
       var res = SD.settleRoll(state, dice[0], dice[1]);
@@ -472,10 +600,30 @@ window.__streetStart = function (THREE) {
       else if (r === "craps" || r === "seven-out") { snd("lose"); haptic(40); }
       else snd("clack");
       throwing = false;
-      ui.screen = "payout";
-      render();
+      showCallout(res.settlement);
       if (scene.sync) scene.sync(state);
+      setTimeout(function () {
+        hideCallout();
+        ui.screen = "payout";
+        render();
+      }, reduceMotion ? 180 : 1100);
     });
+  }
+
+  function showCallout(settlement) {
+    var el = $("callout");
+    if (!el || !settlement) return;
+    var c = settlement.callout || SD.rollCallout(settlement.d1, settlement.d2, settlement.result, settlement.point);
+    el.innerHTML = '<div class="nick">' + esc(c.nick) + '</div><div class="sum">' +
+      settlement.d1 + " + " + settlement.d2 + " = " + settlement.total +
+      (settlement.hard ? " HARD" : "") + "</div>";
+    el.classList.add("on");
+    snd("call");
+  }
+
+  function hideCallout() {
+    var el = $("callout");
+    if (el) el.classList.remove("on");
   }
 
   function renderBanner() {
@@ -503,8 +651,8 @@ window.__streetStart = function (THREE) {
       if (row.line) bits.push("line " + money(row.line));
       if (row.fade) bits.push("fade " + money(row.fade));
       if (row.room) bits.push("side " + money(row.room));
-      b.innerHTML = '<div class="nm">' + row.name + '</div><div class="stk">' + money(row.bankroll) +
-        '</div><div class="on">' + (bits.join(" · ") || "nothing down") + "</div>";
+      b.innerHTML = '<div class="nm">' + esc(row.name) + '</div><div class="stk">' + money(row.bankroll) +
+        '</div><div class="on">' + esc(bits.join(" · ") || "nothing down") + "</div>";
       b.onclick = function () { openHandoff(row.id, "Pass the phone to " + row.name + "."); };
       box.appendChild(b);
     });
@@ -520,10 +668,11 @@ window.__streetStart = function (THREE) {
       var take = Math.min(amt, SD.lineRemaining(state), p.bankroll);
       return "Confirm fades " + money(take) + " of " + money(SD.lineRemaining(state)) + " still open.";
     }
-    if (ui.mode === "side") {
+    if (ui.mode === "side" || ui.mode === "room") {
       var prev = SD.previewPayout(ui.offerType, amt, state.point);
+      var kind = SD.betKind(ui.offerType);
       return prev.ok
-        ? SD.BET_TYPES[ui.offerType].label + " at " + prev.odds + " — you put " + money(prev.stake) + ", cover needs " + money(prev.cover) + ", winner scoops " + money(prev.winIfHit) + "."
+        ? kind + " · " + SD.BET_TYPES[ui.offerType].label + " at " + prev.odds + " — you put " + money(prev.stake) + ", cover needs " + money(prev.cover) + ", winner scoops " + money(prev.winIfHit) + "."
         : prev.error;
     }
     if (ui.mode === "cover") return "Confirm covers with " + money(amt) + " (snaps down to a true-odds piece).";
@@ -535,38 +684,43 @@ window.__streetStart = function (THREE) {
     var tray = $("tray");
     if (ui.screen !== "play" || !p) { stopHold(); tray.innerHTML = ""; return; }
     if (throwing || state.busy) {
-      tray.innerHTML = '<div class="who"><strong>' + p.name + "</strong> · dice are in the air</div>";
+      tray.innerHTML = '<div class="who"><strong>' + esc(p.name) + '</strong> <span class="bank">' + money(p.bankroll) + "</span> · dice are in the air</div>";
       return;
     }
     var types = Object.keys(SD.BET_TYPES).filter(function (t) {
+      if (ui.mode === "room") return SD.BET_TYPES[t].group === "point" && state.phase === "point";
+      if (ui.mode === "side") return SD.BET_TYPES[t].group !== "point";
       return !SD.BET_TYPES[t].needsPoint || state.phase === "point";
     });
     var open = state.bets.filter(function (b) { return b.status === "open"; });
     if (canThisPlayerRoll() && !ui.showBets) {
-      tray.innerHTML = '<div class="who"><strong>' + p.name + "</strong> · " + money(p.bankroll) + ' · shooter</div>' +
+      tray.innerHTML = '<div class="who"><strong>' + esc(p.name) + '</strong> <span class="bank">' + money(p.bankroll) + "</span> · shooter</div>" +
         '<div class="hint">Line is faded. Flick the alley or hold the bar. Dice land on a number the curb already picked.</div>' +
+        liveTicketsHtml() +
         '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>' +
-        '<div class="row"><button class="ghost" id="moreBetBtn">More side action</button><button class="ghost" id="passBtn">Pass phone</button></div>';
+        '<div class="row"><button class="ghost" id="moreBetBtn">Room / side bets</button><button class="ghost" id="passBtn">Pass phone</button></div>';
       bindThrowGrip($("throwGrip"));
       $("moreBetBtn").onclick = function () { ui.showBets = true; renderTray(); };
       $("passBtn").onclick = function () { openPicker("Pass the phone to the next set of hands."); };
       return;
     }
-    var html = '<div class="who"><strong>' + p.name + "</strong> · " + money(p.bankroll) +
+    var html = '<div class="who"><strong>' + esc(p.name) + '</strong> <span class="bank">' + money(p.bankroll) + "</span>" +
       (p.id === state.shooterId ? " · shooter" : "") + "</div>";
     html += '<div class="pending">' + (pending() ? "Wager " + money(pending()) : "No chips in hand") + "</div>";
-    html += '<div class="hint">' + previewText() + "</div>";
+    html += '<div class="hint">' + esc(previewText()) + "</div>";
     html += '<div class="chips" id="chipRow"></div>';
     html += '<div class="modes">';
     if (p.id === state.shooterId && state.phase === "comeout") html += '<button data-mode="post"' + (ui.mode === "post" ? ' class="on"' : "") + ">Post line</button>";
     if (p.id !== state.shooterId && state.line.amount) html += '<button data-mode="fade"' + (ui.mode === "fade" ? ' class="on"' : "") + ">Fade</button>";
+    if (state.phase === "point") html += '<button data-mode="room"' + (ui.mode === "room" ? ' class="on"' : "") + ">Room bet</button>";
     html += '<button data-mode="side"' + (ui.mode === "side" ? ' class="on"' : "") + ">Side bet</button>";
     if (open.some(function (b) { return b.fromId !== p.id; })) html += '<button data-mode="cover"' + (ui.mode === "cover" ? ' class="on"' : "") + ">Cover</button>";
     html += "</div>";
-    if (ui.mode === "side") {
+    if (ui.mode === "side" || ui.mode === "room") {
       html += '<div class="row" id="typeRow">';
       types.forEach(function (t) {
         html += '<button data-type="' + t + '"' + (ui.offerType === t ? ' class="on"' : "") + ">" +
+          '<span class="kind">' + SD.betKind(t) + "</span><br>" +
           SD.BET_TYPES[t].label + " " + SD.oddsLabel(t, SD.BET_TYPES[t].needsPoint ? state.point : 4) + "</button>";
       });
       html += "</div>";
@@ -576,13 +730,14 @@ window.__streetStart = function (THREE) {
       open.forEach(function (b) {
         if (b.fromId === p.id) return;
         var d = SD.describeBet(state, b);
-        html += '<div class="ticket"><div><strong>' + d.from + "</strong> " + d.title + " · " + d.odds +
+        html += '<div class="ticket"><div><span class="kind">' + esc(d.kind) + "</span><br><strong>" + esc(d.from) + "</strong> " + esc(d.title) + " · " + d.odds +
           "<br>" + money(d.stake) + " vs " + money(d.coverNeeded - d.covered) + ' open</div>' +
           '<button data-cover="' + b.id + '"' + (ui.coverId === b.id ? ' class="on"' : "") + ">This one</button></div>";
       });
       html += "</div>";
     }
-    html += '<div class="row"><button id="undoBtn">Undo</button><button class="primary" id="confirmBtn">Confirm</button><button class="ghost" id="passBtn">Pass phone</button></div>';
+    html += liveTicketsHtml();
+    html += '<div class="row"><button id="undoBtn">Undo last</button><button id="clearBtn">Clear</button><button class="primary" id="confirmBtn">Confirm</button><button class="ghost" id="passBtn">Pass phone</button></div>';
     if (canThisPlayerRoll()) {
       html += '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>';
       html += '<div class="row"><button class="ghost" id="hideBetBtn">Hide chips</button></div>';
@@ -594,6 +749,7 @@ window.__streetStart = function (THREE) {
     [1, 5, 10, 20].forEach(function (n) {
       var b = document.createElement("button");
       b.textContent = money(n);
+      b.setAttribute("data-n", String(n));
       bindHold(b, function () { addChip(n); });
       $("chipRow").appendChild(b);
     });
@@ -606,7 +762,12 @@ window.__streetStart = function (THREE) {
     $("chipRow").appendChild(custom);
 
     tray.querySelectorAll("[data-mode]").forEach(function (b) {
-      b.onclick = function () { ui.mode = b.getAttribute("data-mode"); renderTray(); };
+      b.onclick = function () {
+        ui.mode = b.getAttribute("data-mode");
+        if (ui.mode === "room" && SD.BET_TYPES[ui.offerType].group !== "point") ui.offerType = "hits";
+        if (ui.mode === "side" && SD.BET_TYPES[ui.offerType].group === "point") ui.offerType = "next7";
+        renderTray();
+      };
     });
     tray.querySelectorAll("[data-type]").forEach(function (b) {
       b.onclick = function () { ui.offerType = b.getAttribute("data-type"); renderTray(); };
@@ -615,12 +776,24 @@ window.__streetStart = function (THREE) {
       b.onclick = function () { ui.coverId = b.getAttribute("data-cover"); renderTray(); };
     });
     $("undoBtn").onclick = undoChipOrBet;
+    if ($("clearBtn")) $("clearBtn").onclick = clearChips;
     $("confirmBtn").onclick = confirmBet;
     $("passBtn").onclick = function () { openPicker("Pass the phone to the next set of hands."); };
     if ($("cutBtn")) $("cutBtn").onclick = function () { apply(SD.cutLine(state, p.id)); };
     if ($("pullBtn")) $("pullBtn").onclick = function () { apply(SD.pullLine(state, p.id)); };
     if ($("throwGrip")) bindThrowGrip($("throwGrip"));
     if ($("hideBetBtn")) $("hideBetBtn").onclick = function () { ui.showBets = false; renderTray(); };
+  }
+
+  function liveTicketsHtml() {
+    if (!state.bets.length) return "";
+    var html = '<div class="tickets-live">';
+    state.bets.forEach(function (b) {
+      var d = SD.describeBet(state, b);
+      html += '<div><span class="kind">' + esc(d.kind) + "</span> · " + esc(d.from) + " · " + esc(d.title) +
+        " · " + d.odds + " · " + money(d.stake) + " vs " + money(d.coverNeeded - d.covered) + " open</div>";
+    });
+    return html + "</div>";
   }
 
   function stopHold() {
@@ -679,6 +852,9 @@ window.__streetStart = function (THREE) {
     if (!on) return;
     var p = SD.player(state, ui.targetId) || SD.shooter(state);
     $("handName").textContent = p.name;
+    var role = p.id === state.shooterId ? "Shooter · has the rocks" : "Your hands · " + money(p.bankroll) + " pocket";
+    if (p.id !== state.shooterId && SD.lineRemaining(state) > 0) role = "Fading · " + money(SD.lineRemaining(state)) + " still open";
+    $("handRole").textContent = role;
     $("handStack").textContent = money(p.bankroll) + " in the stack";
     $("handWhy").textContent = ui.reason;
     $("handGo").textContent = "I'M " + p.name.toUpperCase();
@@ -693,7 +869,7 @@ window.__streetStart = function (THREE) {
     state.players.forEach(function (p) {
       var b = document.createElement("button");
       var exp = SD.tableExposure(state).filter(function (r) { return r.id === p.id; })[0];
-      b.innerHTML = "<strong>" + p.name + "</strong><br>" + money(p.bankroll) +
+      b.innerHTML = "<strong>" + esc(p.name) + "</strong><br>" + money(p.bankroll) +
         (p.id === state.shooterId ? " · rocks" : "") +
         (exp && exp.onTable ? "<br>on table " + money(exp.onTable) : "");
       b.onclick = function () { openHandoff(p.id, ui.reason); };
@@ -720,11 +896,11 @@ window.__streetStart = function (THREE) {
     $("payHead").textContent = s.headline;
     var html = "";
     (s.lines || []).forEach(function (ln) {
-      html += '<div class="ln ' + (ln.cls || "") + '">' + ln.text + "</div>";
+      html += '<div class="ln ' + (ln.cls || "") + '">' + esc(ln.text) + "</div>";
     });
     SD.tableExposure(state).forEach(function (row) {
       var d = (s.deltas && s.deltas[row.id]) || 0;
-      html += '<div class="ln ' + (d > 0 ? "win" : "") + '">' + row.name + " now " + money(row.bankroll) +
+      html += '<div class="ln ' + (d > 0 ? "win" : "") + '">' + esc(row.name) + " now " + money(row.bankroll) +
         (d ? " · +" + money(d) : "") + (row.onTable ? " · still " + money(row.onTable) + " down" : "") + "</div>";
     });
     $("payBody").innerHTML = html || "<div class='ln'>Money stays in the street.</div>";
@@ -737,7 +913,7 @@ window.__streetStart = function (THREE) {
     state.players.forEach(function (p) {
       var row = document.createElement("div");
       row.className = "crew-row";
-      row.innerHTML = '<input value="' + p.name.replace(/"/g, "") + '" maxlength="16">' +
+      row.innerHTML = '<input value="' + String(p.name).replace(/"/g, "") + '" maxlength="16">' +
         '<span>' + money(p.bankroll) + "</span>" +
         '<button data-rebuy="' + p.id + '">+$50</button>' +
         '<button class="ghost" data-boot="' + p.id + '">Boot</button>';
@@ -749,15 +925,56 @@ window.__streetStart = function (THREE) {
     });
   }
 
+  function renderSetup() {
+    var box = $("setupList");
+    if (!box) return;
+    box.innerHTML = "";
+    ui.setupNames.forEach(function (name, i) {
+      var input = document.createElement("input");
+      input.maxLength = 16;
+      input.placeholder = "Friend " + (i + 1);
+      input.value = name;
+      input.setAttribute("aria-label", "Player " + (i + 1) + " name");
+      input.oninput = function () { ui.setupNames[i] = input.value; };
+      box.appendChild(input);
+    });
+  }
+
+  function startCrew() {
+    var names = ui.setupNames.map(function (n) { return String(n || "").trim(); }).filter(Boolean);
+    if (names.length < 2) {
+      $("setupHint").textContent = "Need at least two names to fade each other.";
+      return;
+    }
+    state = SD.createGame({ names: names });
+    audio.muted = false;
+    ui.undo = [];
+    ui.chips = [];
+    save();
+    if (scene && scene.resetDice) scene.resetDice();
+    openHandoff(state.shooterId, names[0] + " has the rocks. Post a line.");
+  }
+
   function render() {
     $("muteBtn").textContent = audio.muted ? "🔇" : "🔊";
+    $("setup").className = "overlay" + (ui.screen === "setup" ? " on" : "");
+    if (ui.screen === "setup") {
+      $("handoff").className = "overlay";
+      $("picker").className = "overlay";
+      $("payout").className = "overlay";
+      $("crewStrip").innerHTML = "";
+      $("tray").innerHTML = "";
+      $("phaseName").textContent = "NEW WALL";
+      $("phaseDetail").textContent = "Name the crew, then pass the phone.";
+      renderSetup();
+      return;
+    }
     renderBanner();
     renderCrewStrip();
     renderTray();
     renderHandoff();
     renderPicker();
     renderPayout();
-    $("hud").style.visibility = ui.screen === "play" || ui.screen === "handoff" ? "visible" : "visible";
   }
 
   $("handGo").onclick = function () { takePhone(ui.targetId); };
@@ -775,20 +992,44 @@ window.__streetStart = function (THREE) {
   };
   $("muteBtn").onclick = function () {
     audio.muted = !audio.muted;
-    apply(SD.setMuted(state, audio.muted));
+    if (state) apply(SD.setMuted(state, audio.muted));
+    else { $("muteBtn").textContent = audio.muted ? "🔇" : "🔊"; }
   };
   $("rulesBtn").onclick = function () { $("rulesSheet").classList.add("on"); };
-  $("crewBtn").onclick = function () { renderCrewSheet(); $("crewSheet").classList.add("on"); };
+  $("crewBtn").onclick = function () {
+    if (!state) return;
+    renderCrewSheet();
+    $("crewSheet").classList.add("on");
+  };
   $("addPlayerBtn").onclick = function () { apply(SD.addPlayer(state)); renderCrewSheet(); };
   $("resetBtn").onclick = function () {
-    if (!confirm("Wipe the curb? Everyone goes back to $200 play money.")) return;
-    state = SD.resetCrew();
-    ui.undo = []; ui.chips = [];
-    save();
+    if (!confirm("Wipe the curb? You'll name a fresh crew at $200 play money.")) return;
+    try { localStorage.removeItem(SD.SAVE_KEY); } catch (e) {}
+    state = null;
+    ui.undo = [];
+    ui.chips = [];
+    ui.setupNames = SD.DEFAULT_NAMES.slice();
+    ui.screen = "setup";
     if (scene && scene.resetDice) scene.resetDice();
-    openHandoff(state.shooterId, "Fresh crew. Dice has the rocks.");
-    renderCrewSheet();
+    $("crewSheet").classList.remove("on");
+    render();
   };
+  $("setupAdd").onclick = function () {
+    if (ui.setupNames.length >= 8) return;
+    var extras = SD.DEFAULT_NAMES.concat(["Chalk", "Boxcars", "Cee-Lo", "Alley"]);
+    var next = extras[ui.setupNames.length] || ("Kid " + (ui.setupNames.length + 1));
+    ui.setupNames.push(next);
+    renderSetup();
+  };
+  $("setupRemove").onclick = function () {
+    if (ui.setupNames.length <= 2) {
+      $("setupHint").textContent = "Need at least two names to fade each other.";
+      return;
+    }
+    ui.setupNames.pop();
+    renderSetup();
+  };
+  $("setupGo").onclick = startCrew;
   document.querySelectorAll("[data-close]").forEach(function (b) {
     b.onclick = function () { $(b.getAttribute("data-close")).classList.remove("on"); };
   });
@@ -839,9 +1080,20 @@ window.__streetStart = function (THREE) {
       throw: function (d1, d2, power, done) {
         faces = [d1, d2];
         if (reduceMotion) { set(d1, d2, false); done(); return; }
-        set(d1, d2, true);
-        setTimeout(function () { snd("clack"); haptic(18); }, 380);
-        setTimeout(function () { set(d1, d2, false); done(); }, 820);
+        [$("cube1"), $("cube2")].forEach(function (el) {
+          el.style.transition = "none";
+          el.style.animation = "alley-tumble 0.98s cubic-bezier(.2,.7,.15,1)";
+        });
+        setTimeout(function () { snd("clack"); haptic(18); }, 360);
+        setTimeout(function () { snd("clack"); haptic(12); }, 620);
+        setTimeout(function () {
+          [$("cube1"), $("cube2")].forEach(function (el, i) {
+            el.style.animation = "none";
+            el.style.transition = "transform 0.18s ease";
+            el.style.transform = rot(i ? d2 : d1);
+          });
+          done();
+        }, 1020);
       }
     };
   }
@@ -1032,8 +1284,8 @@ window.__streetStart = function (THREE) {
     }
 
     function park(a, b) {
-      dieA.position.set(-0.42, 0.22, 0.95);
-      dieB.position.set(0.42, 0.22, 1.15);
+      dieA.position.set(-0.4, 0.22, 0.62);
+      dieB.position.set(0.4, 0.22, 0.62);
       dieA.quaternion.copy(faceUp(a || 1, -0.2));
       dieB.quaternion.copy(faceUp(b || 1, 0.25));
     }
@@ -1041,6 +1293,7 @@ window.__streetStart = function (THREE) {
 
     var flying = null;
     var last = [1, 1];
+    var camKick = 0;
 
     function startThrow(d1, d2, power, done) {
       last = [d1, d2];
@@ -1055,75 +1308,94 @@ window.__streetStart = function (THREE) {
         done: done,
         settled: false,
         dice: [
-          body(dieA, -0.25, pwr, d1, -0.3),
-          body(dieB, 0.28, pwr, d2, 0.35)
+          body(dieA, -0.28, pwr, d1, -0.3, 0),
+          body(dieB, 0.32, pwr, d2, 0.35, 1)
         ]
       };
     }
 
-    function body(mesh, x, pwr, face, twist) {
-      mesh.position.set(x, 0.55, 1.85);
+    function body(mesh, x, pwr, face, twist, slot) {
+      mesh.position.set(x, 0.5, 2.05);
       return {
         mesh: mesh,
         pos: mesh.position.clone(),
-        vel: new THREE.Vector3((Math.random() - 0.5) * 0.8, 2.1 + pwr, -7.2 * pwr - Math.random()),
-        spin: new THREE.Vector3((Math.random() - 0.5) * 18, (Math.random() - 0.5) * 16, (Math.random() - 0.5) * 14),
+        vel: new THREE.Vector3((Math.random() - 0.5) * 0.55, 2.55 + pwr * 0.55, -8.5 * pwr - 0.35),
+        spin: new THREE.Vector3((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 18, (Math.random() - 0.5) * 16),
         face: face,
         twist: twist,
         target: faceUp(face, twist),
-        bounced: false
+        home: new THREE.Vector3(slot ? 0.4 : -0.4, 0.22, 0.62),
+        bounced: false,
+        hops: 0
       };
     }
 
     function step(dt) {
+      if (camKick > 0.001) {
+        camera.position.y = 5.8 + camKick;
+        camera.position.x = camKick * 0.4;
+        camKick *= 0.82;
+      } else if (camera.position.y !== 5.8) {
+        camera.position.y = 5.8;
+        camera.position.x = 0;
+      }
       if (!flying) return;
       flying.t += dt;
-      var slow = flying.t > 0.95;
+      var slow = flying.t > 0.88;
       flying.dice.forEach(function (d) {
         if (flying.settled) {
-          d.mesh.quaternion.slerp(d.target, 1 - Math.pow(0.0008, dt));
-          d.pos.y += (0.22 - d.pos.y) * (1 - Math.pow(0.002, dt));
+          d.mesh.quaternion.slerp(d.target, 1 - Math.pow(0.0002, dt));
+          d.pos.lerp(d.home, 1 - Math.pow(0.012, dt));
           d.mesh.position.copy(d.pos);
           return;
         }
-        d.vel.y -= 14 * dt;
+        d.vel.y -= 15.2 * dt;
         d.pos.addScaledVector(d.vel, dt);
         var q = new THREE.Quaternion().setFromEuler(new THREE.Euler(d.spin.x * dt, d.spin.y * dt, d.spin.z * dt));
         d.mesh.quaternion.multiply(q);
         if (d.pos.y < 0.22) {
           d.pos.y = 0.22;
           if (d.vel.y < 0) {
-            d.vel.y *= -0.38;
-            d.vel.x *= 0.82;
-            d.vel.z *= 0.82;
-            d.spin.multiplyScalar(0.72);
-            if (Math.abs(d.vel.y) < 0.7) d.vel.y = 0;
+            d.hops += 1;
+            d.vel.y *= d.hops === 1 ? -0.56 : -0.34;
+            d.vel.x *= 0.78;
+            d.vel.z *= 0.78;
+            d.spin.multiplyScalar(0.68);
+            if (Math.abs(d.vel.y) < 0.55) d.vel.y = 0;
             snd("clack");
+            haptic(10);
           }
         }
         if (d.pos.z < -4.85) {
           d.pos.z = -4.85;
-          d.vel.z *= -0.52;
-          d.spin.x += 6;
+          d.vel.z *= -0.58;
+          d.spin.x += 8;
           d.bounced = true;
+          camKick = 0.16;
           snd("clack");
-          haptic(16);
+          haptic(18);
         }
-        if (d.pos.z > 2.0) { d.pos.z = 2.0; d.vel.z *= -0.45; }
+        if (d.pos.z > 2.15) { d.pos.z = 2.15; d.vel.z *= -0.4; }
         if (d.pos.x > 2.3) { d.pos.x = 2.3; d.vel.x *= -0.5; }
         if (d.pos.x < -2.3) { d.pos.x = -2.3; d.vel.x *= -0.5; }
         d.mesh.position.copy(d.pos);
       });
       var speed = flying.dice[0].vel.length() + flying.dice[1].vel.length();
-      if (!flying.settled && (flying.t > 2.1 || (slow && speed < 1.1 && flying.dice[0].bounced))) {
+      if (!flying.settled && (flying.t > 1.95 || (slow && speed < 0.95 && flying.dice[0].bounced))) {
         flying.settled = true;
+        flying.settleAt = flying.t;
         flying.dice.forEach(function (d) {
           d.vel.set(0, 0, 0);
           d.spin.set(0, 0, 0);
         });
       }
-      if (flying.settled && flying.t > 2.55) {
-        flying.dice.forEach(function (d) { d.mesh.quaternion.copy(d.target); });
+      if (flying.settled && flying.t > (flying.settleAt || 0) + 0.55) {
+        flying.dice.forEach(function (d) {
+          d.mesh.quaternion.copy(d.target);
+          d.mesh.position.copy(d.home);
+        });
+        last[0] = flying.dice[0].face;
+        last[1] = flying.dice[1].face;
         var cb = flying.done;
         flying = null;
         cb();
@@ -1146,6 +1418,7 @@ window.__streetStart = function (THREE) {
     });
 
     function sync(st) {
+      if (!st) { rebuildCash(0); puck.visible = false; return; }
       rebuildCash(st.line.amount + SD.fadedTotal(st));
       if (st.phase === "point" && chalkX[st.point] != null) {
         puck.visible = true;
