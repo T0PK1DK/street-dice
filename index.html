@@ -57,7 +57,7 @@
   .f4 { transform: rotateY(-90deg) translateZ(29px); }
   .f2 { transform: rotateX(90deg) translateZ(29px); }
   .f5 { transform: rotateX(-90deg) translateZ(29px); }
-  .hud { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; }
+  .hud { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; z-index: 1; }
   .hud > * { pointer-events: auto; }
   header {
     display: flex; justify-content: space-between; align-items: center;
@@ -112,12 +112,14 @@
     position: fixed; inset: 0; background: rgba(6,5,4,0.88);
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     padding: 24px 18px calc(var(--safe-b) + 20px); text-align: center; z-index: 8;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
   .overlay h2 { font-size: 0.8rem; letter-spacing: 0.22em; color: var(--gold); }
   .overlay .big { font-size: clamp(2.4rem, 12vw, 4rem); font-weight: 800; margin: 8px 0; }
   .overlay p { color: var(--muted); max-width: 26rem; line-height: 1.4; }
   .overlay .stack { font-size: 1.4rem; color: var(--gold); margin: 8px 0 18px; }
-  .overlay button { min-width: min(100%, 320px); min-height: 64px; font-size: 1.05rem; }
+  .overlay > button.primary, .overlay > button.ghost { min-width: min(100%, 320px); min-height: 64px; font-size: 1.05rem; }
+  .overlay .row button { min-width: 0; flex: 1; min-height: 52px; font-size: 0.95rem; }
   .pickgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(420px, 100%); margin: 16px 0; }
   .pickgrid button { min-height: 72px; text-align: left; }
   .pay { text-align: left; width: min(440px, 100%); background: #1c1914; border-radius: 18px; padding: 14px; margin: 12px 0; }
@@ -202,8 +204,16 @@
     .chips button { min-width: 52px; min-height: 52px; }
     .modes button, .row button { min-height: 48px; }
     #throwGrip { min-height: 58px; }
-    .overlay { padding: 12px 18px calc(var(--safe-b) + 12px); }
-    .overlay .big { font-size: clamp(1.8rem, 7vw, 3rem); }
+    .overlay { padding: 8px 16px calc(var(--safe-b) + 10px); justify-content: flex-start; }
+    .overlay .big { font-size: clamp(1.4rem, 6vw, 2.4rem); margin: 4px 0; }
+    .overlay h2 { margin: 0; }
+    .overlay p { margin: 4px 0; }
+    .setup-list {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+      width: min(640px, 96%); margin: 8px 0;
+    }
+    .setup-list input { min-height: 44px; margin: 0; }
+    #setupGo, #handGo, #payNext { position: sticky; bottom: 6px; }
     .callout { top: 46%; left: 42%; }
     .pickgrid { grid-template-columns: 1fr 1fr 1fr; width: min(640px, 100%); }
   }
@@ -966,9 +976,11 @@ window.__streetStart = function (THREE) {
       $("tray").innerHTML = "";
       $("phaseName").textContent = "NEW WALL";
       $("phaseDetail").textContent = "Name the crew, then pass the phone.";
+      $("hud").style.visibility = "hidden";
       renderSetup();
       return;
     }
+    $("hud").style.visibility = (ui.screen === "handoff" || ui.screen === "pick" || ui.screen === "payout") ? "hidden" : "visible";
     renderBanner();
     renderCrewStrip();
     renderTray();
