@@ -436,5 +436,148 @@ test("preview payouts for a $10 hit on 6", function () {
   assert.strictEqual(prev.winIfHit, 22);
 });
 
+test("unfade is locked after the point so the line cannot softlock", function () {
+  var s = game();
+  s = mustOk(SD.postLine(s, "p1", 20));
+  s = mustOk(SD.fadeLine(s, "p2", 20));
+  s = mustOk(SD.settleRoll(s, 4, 4));
+  assert.strictEqual(s.phase, "point");
+  assert.strictEqual(SD.unfadeLine(s, "p2", 20).ok, false);
+  assert.strictEqual(SD.unpostLine(s, "p1", 5).ok, false);
+  assert.strictEqual(SD.canRoll(s), true);
+  assert.strictEqual(SD.fadedTotal(s), 20);
+});
+
+test("unmatched hardways refund when the line is decided, stay on idle", function () {
+  var s = game();
+  var start = money(s);
+  s = mustOk(SD.postLine(s, "p1", 10));
+  s = mustOk(SD.fadeLine(s, "p2", 10));
+  s = mustOk(SD.settleRoll(s, 2, 2));
+  s = mustOk(SD.offerBet(s, "p3", "hard8", 10));
+  assert.strictEqual(SD.player(s, "p3").bankroll, 190);
+  s = mustOk(SD.settleRoll(s, 3, 2));
+  assert.strictEqual(s.lastSettlement.result, "idle");
+  assert.strictEqual(s.bets.length, 1);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 190);
+  s = mustOk(SD.settleRoll(s, 1, 3));
+  assert.strictEqual(s.lastSettlement.result, "hit");
+  assert.strictEqual(s.bets.length, 0);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 200);
+  assert.strictEqual(money(s), start);
+
+  s = game();
+  start = money(s);
+  s = mustOk(SD.postLine(s, "p1", 10));
+  s = mustOk(SD.fadeLine(s, "p2", 10));
+  s = mustOk(SD.offerBet(s, "p3", "hard4", 10));
+  s = mustOk(SD.settleRoll(s, 3, 4));
+  assert.strictEqual(s.lastSettlement.result, "natural");
+  assert.strictEqual(s.bets.length, 0);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 200);
+  assert.strictEqual(money(s), start);
+
+  s = game();
+  s = mustOk(SD.postLine(s, "p1", 10));
+  s = mustOk(SD.fadeLine(s, "p2", 10));
+  s = mustOk(SD.settleRoll(s, 3, 3));
+  s = mustOk(SD.offerBet(s, "p3", "hard4", 10));
+  s = mustOk(SD.settleRoll(s, 2, 5));
+  assert.strictEqual(s.lastSettlement.result, "seven-out");
+  assert.strictEqual(s.bets.length, 0);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 200);
+  assert.strictEqual(s.shooterId, "p2");
+});
+
+test("every come-out face settles the line the street way and keeps the books even", function () {
+  var expect = {
+    2: "craps", 3: "craps", 7: "natural", 11: "natural", 12: "craps"
+  };
+  for (var a = 1; a <= 6; a++) {
+    for (var b = 1; b <= 6; b++) {
+      var s = game();
+      var start = money(s);
+      s = mustOk(SD.postLine(s, "p1", 10));
+      s = mustOk(SD.fadeLine(s, "p2", 10));
+      s = mustOk(SD.settleRoll(s, a, b));
+      var t = a + b;
+      var want = expect[t] || "point";
+      assert.strictEqual(s.lastSettlement.result, want, a + "+" + b);
+      assert.strictEqual(s.lastSettlement.callout.total, t);
+      assert.strictEqual(money(s), start);
+      assert.ok(!SD.validateState(s));
+      if (want === "natural") {
+        assert.strictEqual(SD.player(s, "p1").bankroll, 210);
+        assert.strictEqual(s.shooterId, "p1");
+        assert.strictEqual(s.phase, "comeout");
+      } else if (want === "craps") {
+        assert.strictEqual(SD.player(s, "p2").bankroll, 210);
+        assert.strictEqual(s.shooterId, "p1");
+      } else {
+        assert.strictEqual(s.point, t);
+        assert.strictEqual(s.line.amount, 10);
+      }
+    }
+  }
+});
+
+test("natural 7 with mixed next-roll tickets pays each book separately", function () {
+  var s = game();
+  var start = money(s);
+  s = mustOk(SD.postLine(s, "p1", 20));
+  s = mustOk(SD.fadeLine(s, "p2", 20));
+  s = mustOk(SD.offerBet(s, "p3", "next7", 10));
+  s = mustOk(SD.coverBet(s, s.bets[0].id, "p4", 50));
+  s = mustOk(SD.offerBet(s, "p4", "craps", 5));
+  s = mustOk(SD.coverBet(s, s.bets[1].id, "p3", 40));
+  s = mustOk(SD.settleRoll(s, 3, 4));
+  assert.strictEqual(s.lastSettlement.result, "natural");
+  assert.strictEqual(SD.player(s, "p1").bankroll, 220);
+  assert.strictEqual(SD.player(s, "p2").bankroll, 180);
+  assert.strictEqual(SD.player(s, "p3").bankroll, 255);
+  assert.strictEqual(SD.player(s, "p4").bankroll, 145);
+  assert.strictEqual(money(s), start);
+});
+
+test("don't on 4 is 1:2 and seven-out pays the taker", function () {
+  var s = game();
+  var start = money(s);
+  s = mustOk(SD.postLine(s, "p1", 10));
+  s = mustOk(SD.fadeLine(s, "p2", 10));
+  s = mustOk(SD.settleRoll(s, 1, 3));
+  s = mustOk(SD.offerBet(s, "p3", "dont", 10));
+  assert.strictEqual(s.bets[0].coverNeeded, 5);
+  assert.strictEqual(SD.describeBet(s, s.bets[0]).kind, "Room");
+  s = mustOk(SD.coverBet(s, s.bets[0].id, "p4", 5));
+  s = mustOk(SD.settleRoll(s, 3, 4));
+  assert.strictEqual(SD.player(s, "p3").bankroll, 205);
+  assert.strictEqual(SD.player(s, "p4").bankroll, 195);
+  assert.strictEqual(money(s), start);
+});
+
+test("roll callouts name the street throws", function () {
+  assert.strictEqual(SD.rollNick(1, 1), "Snake eyes");
+  assert.strictEqual(SD.rollNick(1, 2), "Ace-deuce");
+  assert.strictEqual(SD.rollNick(5, 6), "Yo-leven");
+  assert.strictEqual(SD.rollNick(6, 6), "Boxcars");
+  assert.strictEqual(SD.rollNick(3, 4), "Seven");
+  assert.strictEqual(SD.rollNick(4, 4), "Hard 8");
+  assert.strictEqual(SD.rollNick(2, 6), "Easy 8");
+  assert.strictEqual(SD.rollCallout(3, 4, "natural", null).line, "Seven — pass");
+  assert.strictEqual(SD.rollCallout(3, 4, "seven-out", 6).line, "Seven — seven out");
+  assert.strictEqual(SD.betKind("hits"), "Room");
+  assert.strictEqual(SD.betKind("next7"), "Side");
+  assert.strictEqual(SD.betKind("hard6"), "Side");
+});
+
+test("named crew setup keeps starting stacks and two-player minimum", function () {
+  var s = SD.createGame({ names: ["Nia", "Bo"], bankroll: 150 });
+  assert.strictEqual(s.players.length, 2);
+  assert.strictEqual(s.players[0].name, "Nia");
+  assert.strictEqual(s.players[1].bankroll, 150);
+  assert.strictEqual(SD.bankSum(s), 300);
+  assert.strictEqual(SD.removePlayer(s, "p1").ok, false);
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 process.exit(failed ? 1 : 0);

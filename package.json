@@ -4,6 +4,7 @@
   "description": "Player-banked street craps for friends. Open index.html — no build.",
   "scripts": {
     "test": "node test/rules.test.js",
+    "build": "node --check engine.js && node --check test/rules.test.js",
     "start": "python3 -m http.server 4173"
   }
 }
