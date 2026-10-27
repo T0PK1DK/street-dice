@@ -37,7 +37,8 @@
   button.warn { background: #5a2d28; }
   button.on { outline: 2px solid var(--gold); }
   #view { position: fixed; inset: 0; }
-  #view canvas, #fallback2d { width: 100%; height: 100%; display: block; }
+  #view canvas, #fallback2d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #view canvas[hidden], #fallback2d[hidden] { display: none !important; }
   #fallback2d {
     background:
       linear-gradient(#5a3228 0 68px, transparent 68px),
