@@ -47,9 +47,10 @@
   #fallback2d .wall { height: 68px; background: repeating-linear-gradient(90deg, #6b3228 0 36px, #c9b49a 36px 39px); }
   #fallback2d .alley { position: relative; height: calc(100% - 68px); }
   #fallback2d .curb { position: absolute; bottom: 28%; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #cfc6b3 0 18px, #111 18px 28px); }
-  #fallback2d .dice-box { position: absolute; inset: 0; perspective: 600px; pointer-events: none; z-index: 2; }
+  #fallback2d .dice-box { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
   #fallback2d .curb { z-index: 1; }
-  .cube { width: 58px; height: 58px; position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+  #fallback2d .die { position: absolute; left: 0; top: 0; width: 58px; height: 58px; perspective: 480px; }
+  .cube { width: 58px; height: 58px; position: relative; transform-style: preserve-3d; }
   .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4, 0 10px 16px rgba(0,0,0,0.38); }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a2218; margin: auto; }
   .f1 { transform: rotateY(0) translateZ(29px); }
@@ -263,8 +264,8 @@
       <div class="wall"></div>
       <div class="alley">
         <div class="dice-box">
-          <div class="cube" id="cube1"></div>
-          <div class="cube" id="cube2"></div>
+          <div class="die" id="die1"><div class="cube" id="cube1"></div></div>
+          <div class="die" id="die2"><div class="cube" id="cube2"></div></div>
         </div>
         <div class="curb"></div>
       </div>
@@ -1280,17 +1281,20 @@ window.__streetStart = function (THREE) {
       };
     }
     function put(el, x, y, transform) {
-      el.style.left = (x - 29) + "px";
-      el.style.top = (y - 29) + "px";
+      var wrap = el.parentNode;
+      wrap.style.left = (x - 29) + "px";
+      wrap.style.top = (y - 29) + "px";
       el.style.transform = transform;
     }
     function park(a, b, animate) {
       var dim = alley();
       [$("cube1"), $("cube2")].forEach(function (el, i) {
+        var wrap = el.parentNode;
         el.style.animation = "none";
-        el.style.transition = animate && !reduceMotion
-          ? "left 0.28s ease, top 0.28s ease, transform 0.22s ease"
+        wrap.style.transition = animate && !reduceMotion
+          ? "left 0.28s ease, top 0.28s ease"
           : "none";
+        el.style.transition = animate && !reduceMotion ? "transform 0.22s ease" : "none";
         put(el, dim.w * 0.5 + (i ? 42 : -42), dim.homeY, rot(i ? b : a));
       });
     }
@@ -1331,6 +1335,8 @@ window.__streetStart = function (THREE) {
       }
       $("cube1").style.transition = "none";
       $("cube2").style.transition = "none";
+      $("cube1").parentNode.style.transition = "none";
+      $("cube2").parentNode.style.transition = "none";
       put($("cube1"), flying.a.x, flying.a.y, "rotateX(" + flying.rxA + "deg) rotateY(" + flying.ryA + "deg)");
       put($("cube2"), flying.b.x, flying.b.y, "rotateX(" + flying.rxB + "deg) rotateY(" + flying.ryB + "deg)");
       var speed = Math.hypot(flying.a.vx, flying.a.vy) + Math.hypot(flying.b.vx, flying.b.vy);
