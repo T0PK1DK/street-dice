@@ -47,7 +47,8 @@
   #fallback2d .wall { height: 68px; background: repeating-linear-gradient(90deg, #6b3228 0 36px, #c9b49a 36px 39px); }
   #fallback2d .alley { position: relative; height: calc(100% - 68px); }
   #fallback2d .curb { position: absolute; bottom: 28%; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #cfc6b3 0 18px, #111 18px 28px); }
-  #fallback2d .dice-box { position: absolute; inset: 0; perspective: 600px; pointer-events: none; }
+  #fallback2d .dice-box { position: absolute; inset: 0; perspective: 600px; pointer-events: none; z-index: 2; }
+  #fallback2d .curb { z-index: 1; }
   .cube { width: 58px; height: 58px; position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
   .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4, 0 10px 16px rgba(0,0,0,0.38); }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a2218; margin: auto; }
@@ -129,12 +130,14 @@
     position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: none; align-items: flex-end; justify-content: center; z-index: 12; padding: 12px;
   }
   .sheet.on { display: flex; }
-  .panel { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #201e19; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+  .panel { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #201e19; border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; }
   .panel h2 { margin-bottom: 8px; }
   .panel p, .panel li { color: var(--muted); line-height: 1.45; }
   .panel ul { padding-left: 18px; margin: 8px 0 12px; }
   .crew-row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
   .crew-row input { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #2b271f; padding: 0 10px; }
+  #crewList { overflow: auto; min-height: 0; }
+  .crew-actions { position: sticky; bottom: 0; background: #201e19; padding-top: 10px; margin-top: 4px; }
   .chrome { display: flex; flex-direction: column; }
   .who { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .who .bank { color: var(--gold); font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em; }
@@ -219,6 +222,9 @@
     .iconrow button { min-width: 44px; padding: 0 8px; }
     #ask { justify-content: center; }
     #ask .row { width: min(340px, 70vw); }
+    .panel { max-height: 94vh; }
+    .crew-row { margin: 4px 0; }
+    .crew-row input { min-height: 40px; }
   }
   @media (min-width: 960px) and (min-height: 700px) {
     header, .banner, .crew { max-width: 1100px; width: calc(100% - 24px); margin-left: auto; margin-right: auto; }
@@ -378,7 +384,7 @@
       <h2>The crew</h2>
       <p>Street names only. Stacks save on this phone (v2). Reset wipes the curb. Play money — no real payments.</p>
       <div id="crewList"></div>
-      <div class="row" style="margin-top:12px">
+      <div class="row crew-actions">
         <button id="addPlayerBtn">Add a body</button>
         <button class="warn" id="resetBtn">Reset the curb</button>
       </div>
@@ -1251,22 +1257,20 @@ window.__streetStart = function (THREE) {
     }
     function alley() {
       var el = $("fallback2d").querySelector(".alley");
-      var rect = el ? el.getBoundingClientRect() : { top: 68 };
-      var w = (el && el.clientWidth) || window.innerWidth || 360;
-      var h = (el && el.clientHeight) || 320;
+      var viewW = window.innerWidth || 360;
+      var viewH = window.innerHeight || 640;
+      var w = Math.min((el && el.clientWidth) || viewW, viewW);
+      var h = Math.min((el && el.clientHeight) || Math.max(220, viewH - 68), viewH);
       var r = 30;
-      var viewH = window.innerHeight || h;
-      var visibleTop = Math.max(r + 8, viewH * 0.28 - rect.top);
-      var visibleBot = Math.min(h - r - 8, viewH * 0.58 - rect.top);
-      var floor = Math.max(visibleTop + 48, visibleBot);
+      var floor = Math.max(r + 80, h * 0.58);
       return {
         w: w,
         floor: floor,
-        homeY: (visibleTop + floor) * 0.5,
+        homeY: Math.max(r + 24, h * 0.38),
         world: {
           left: r + 12,
           right: Math.max(r + 20, w - r - 12),
-          top: Math.max(r + 6, 10 - rect.top),
+          top: r + 6,
           floor: floor,
           radius: r,
           gravity: 2400,
@@ -1375,8 +1379,8 @@ window.__streetStart = function (THREE) {
           done: done,
           settled: false,
           world: dim.world,
-          a: { x: dim.w * 0.38, y: dim.floor - 8, vx: 90 + pwr * 70, vy: -(640 + pwr * 320) },
-          b: { x: dim.w * 0.62, y: dim.floor - 4, vx: -(95 + pwr * 65), vy: -(610 + pwr * 300) },
+          a: { x: dim.w * 0.38, y: dim.homeY + 10, vx: 110 + pwr * 80, vy: -(520 + pwr * 260) },
+          b: { x: dim.w * 0.62, y: dim.homeY + 14, vx: -(115 + pwr * 75), vy: -(500 + pwr * 240) },
           rxA: 0,
           ryA: 0,
           rxB: 0,
