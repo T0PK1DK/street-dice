@@ -1090,6 +1090,74 @@
     return { a: outA, b: outB, hit: hit, separated: true, overlap: overlap };
   }
 
+  function stepDice2D(a, b, world, dt) {
+    world = world || {};
+    dt = dt == null ? 1 / 60 : Number(dt);
+    if (!(dt > 0)) dt = 0;
+    if (dt > 0.05) dt = 0.05;
+    var r = world.radius == null ? 30 : world.radius;
+    var g = world.gravity == null ? 2400 : world.gravity;
+    var left = world.left == null ? r : world.left;
+    var right = world.right == null ? 400 - r : world.right;
+    var top = world.top == null ? r : world.top;
+    var floor = world.floor == null ? 300 - r : world.floor;
+    var rest = world.restitution == null ? 0.55 : world.restitution;
+    var friction = world.friction == null ? 0.76 : world.friction;
+
+    function integrate(d) {
+      return {
+        x: d.x + (d.vx || 0) * dt,
+        y: d.y + (d.vy || 0) * dt,
+        z: 0,
+        vx: d.vx || 0,
+        vy: (d.vy || 0) + g * dt,
+        vz: 0
+      };
+    }
+
+    function clamp(o) {
+      var wall = false;
+      var floorHit = false;
+      if (o.x < left) { o.x = left; if (o.vx < 0) { o.vx *= -rest; wall = true; } }
+      if (o.x > right) { o.x = right; if (o.vx > 0) { o.vx *= -rest; wall = true; } }
+      if (o.y < top) { o.y = top; if (o.vy < 0) { o.vy *= -rest; wall = true; } }
+      if (o.y > floor) {
+        o.y = floor;
+        if (o.vy > 0) {
+          o.vy *= -rest;
+          o.vx *= friction;
+          floorHit = true;
+          if (Math.abs(o.vy) < 40) o.vy = 0;
+        }
+      }
+      return { wall: wall, floor: floorHit };
+    }
+
+    var A = integrate(a);
+    var B = integrate(b);
+    var ca = clamp(A);
+    var cb = clamp(B);
+    var bump = collideDice(A, B, r);
+    A.x = bump.a.x;
+    A.y = bump.a.y;
+    A.vx = bump.a.vx;
+    A.vy = bump.a.vy;
+    B.x = bump.b.x;
+    B.y = bump.b.y;
+    B.vx = bump.b.vx;
+    B.vy = bump.b.vy;
+    var ca2 = clamp(A);
+    var cb2 = clamp(B);
+    return {
+      a: A,
+      b: B,
+      hit: bump.hit,
+      separated: bump.separated,
+      wall: ca.wall || cb.wall || ca2.wall || cb2.wall,
+      floor: ca.floor || cb.floor || ca2.floor || cb2.floor
+    };
+  }
+
   function validateState(state) {
     if (bankSum(state) < 0) return "Negative bankroll.";
     for (var i = 0; i < state.players.length; i++) {
@@ -1157,6 +1225,7 @@
     isHard: isHard,
     parseChip: parseChip,
     flickPower: flickPower,
-    collideDice: collideDice
+    collideDice: collideDice,
+    stepDice2D: stepDice2D
   };
 });

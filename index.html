@@ -37,7 +37,8 @@
   button.warn { background: #5a2d28; }
   button.on { outline: 2px solid var(--gold); }
   #view { position: fixed; inset: 0; }
-  #view canvas, #fallback2d { width: 100%; height: 100%; display: block; }
+  #view canvas, #fallback2d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #view canvas[hidden], #fallback2d[hidden] { display: none !important; }
   #fallback2d {
     background:
       linear-gradient(#5a3228 0 68px, transparent 68px),
@@ -47,9 +48,11 @@
   #fallback2d .wall { height: 68px; background: repeating-linear-gradient(90deg, #6b3228 0 36px, #c9b49a 36px 39px); }
   #fallback2d .alley { position: relative; height: calc(100% - 68px); }
   #fallback2d .curb { position: absolute; bottom: 28%; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #cfc6b3 0 18px, #111 18px 28px); }
-  #fallback2d .dice-box { position: absolute; left: 50%; top: 28%; transform: translateX(-50%); display: flex; gap: 22px; perspective: 600px; }
+  #fallback2d .dice-box { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+  #fallback2d .curb { z-index: 1; }
+  #fallback2d .die { position: absolute; left: 0; top: 0; width: 58px; height: 58px; perspective: 480px; }
   .cube { width: 58px; height: 58px; position: relative; transform-style: preserve-3d; }
-  .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4; }
+  .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4, 0 10px 16px rgba(0,0,0,0.38); }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a2218; margin: auto; }
   .f1 { transform: rotateY(0) translateZ(29px); }
   .f6 { transform: rotateY(180deg) translateZ(29px); }
@@ -129,12 +132,14 @@
     position: fixed; inset: 0; background: rgba(0,0,0,0.62); display: none; align-items: flex-end; justify-content: center; z-index: 12; padding: 12px;
   }
   .sheet.on { display: flex; }
-  .panel { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #201e19; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+  .panel { width: min(560px, 100%); max-height: 88vh; overflow: auto; background: #201e19; border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; }
   .panel h2 { margin-bottom: 8px; }
   .panel p, .panel li { color: var(--muted); line-height: 1.45; }
   .panel ul { padding-left: 18px; margin: 8px 0 12px; }
   .crew-row { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
   .crew-row input { flex: 1; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #2b271f; padding: 0 10px; }
+  #crewList { overflow: auto; min-height: 0; }
+  .crew-actions { position: sticky; bottom: 0; background: #201e19; padding-top: 10px; margin-top: 4px; }
   .chrome { display: flex; flex-direction: column; }
   .who { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
   .who .bank { color: var(--gold); font-size: 1.35rem; font-weight: 800; letter-spacing: 0.02em; }
@@ -165,13 +170,6 @@
   .setup-list input { width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: #2b271f; padding: 0 12px; margin: 6px 0; }
   .setup-bank { margin: 8px 0 14px; }
   .sheet { transition: opacity 0.2s ease; }
-  @keyframes alley-tumble {
-    0% { transform: translateY(24px) rotateX(0) rotateY(0); }
-    32% { transform: translateY(-96px) rotateX(640deg) rotateY(420deg); }
-    58% { transform: translateY(10px) rotateX(920deg) rotateY(580deg); }
-    76% { transform: translateY(-20px) rotateX(1040deg) rotateY(680deg); }
-    100% { transform: translateY(0) rotateX(1100deg) rotateY(740deg); }
-  }
   @media (orientation: landscape) and (max-height: 560px) {
     .hud { flex-direction: row; align-items: stretch; }
     .chrome {
@@ -224,6 +222,11 @@
     .pad { width: min(340px, 62vw); gap: 6px; margin: 8px 0; }
     .pad button { min-height: 46px; font-size: 1.05rem; }
     .iconrow button { min-width: 44px; padding: 0 8px; }
+    #ask { justify-content: center; }
+    #ask .row { width: min(340px, 70vw); }
+    .panel { max-height: 94vh; }
+    .crew-row { margin: 4px 0; }
+    .crew-row input { min-height: 40px; }
   }
   @media (min-width: 960px) and (min-height: 700px) {
     header, .banner, .crew { max-width: 1100px; width: calc(100% - 24px); margin-left: auto; margin-right: auto; }
@@ -245,6 +248,9 @@
   }
   .pad button { min-height: 56px; font-size: 1.25rem; font-weight: 800; }
   .pad button.ghost { font-size: 0.95rem; }
+  #ask { z-index: 14; }
+  #ask .row { width: min(340px, 100%); margin-top: 14px; }
+  #ask .row button { min-height: 56px; }
   #throwGrip { font-weight: 800; letter-spacing: 0.04em; }
   @media (prefers-reduced-motion: reduce) {
     .cube { transition: none !important; animation: none !important; }
@@ -259,8 +265,8 @@
       <div class="wall"></div>
       <div class="alley">
         <div class="dice-box">
-          <div class="cube" id="cube1"></div>
-          <div class="cube" id="cube2"></div>
+          <div class="die" id="die1"><div class="cube" id="cube1"></div></div>
+          <div class="die" id="die2"><div class="cube" id="cube2"></div></div>
         </div>
         <div class="curb"></div>
       </div>
@@ -351,6 +357,16 @@
     </div>
   </div>
 
+  <div class="overlay" id="ask" role="dialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askBody" aria-hidden="true">
+    <h2 id="askTitle">WIPE THE CURB?</h2>
+    <div class="big" id="askLead" style="font-size:clamp(1.5rem,6vw,2.3rem)">Fresh crew</div>
+    <p id="askBody">You'll name a fresh crew at $200 play money. This phone's save is gone.</p>
+    <div class="row">
+      <button class="ghost" id="askNo">Keep playing</button>
+      <button class="warn" id="askYes">Wipe it</button>
+    </div>
+  </div>
+
   <div class="sheet" id="rulesSheet">
     <div class="panel">
       <h2>How this curb runs</h2>
@@ -370,7 +386,7 @@
       <h2>The crew</h2>
       <p>Street names only. Stacks save on this phone (v2). Reset wipes the curb. Play money — no real payments.</p>
       <div id="crewList"></div>
-      <div class="row" style="margin-top:12px">
+      <div class="row crew-actions">
         <button id="addPlayerBtn">Add a body</button>
         <button class="warn" id="resetBtn">Reset the curb</button>
       </div>
@@ -1147,17 +1163,60 @@ window.__streetStart = function (THREE) {
     $("crewSheet").classList.add("on");
   };
   $("addPlayerBtn").onclick = function () { apply(SD.addPlayer(state)); renderCrewSheet(); };
+  var askFn = { yes: null, no: null };
+  function openAsk(opts) {
+    $("askTitle").textContent = opts.title;
+    $("askLead").textContent = opts.lead;
+    $("askBody").textContent = opts.body;
+    $("askYes").textContent = opts.yes || "Do it";
+    $("askNo").textContent = opts.no || "Never mind";
+    $("askYes").className = opts.danger ? "warn" : "primary";
+    askFn.yes = opts.onYes || null;
+    askFn.no = opts.onNo || null;
+    $("ask").classList.add("on");
+    $("ask").setAttribute("aria-hidden", "false");
+    setTimeout(function () { $("askNo").focus(); }, 30);
+  }
+  function closeAsk(accepted) {
+    if (!$("ask").classList.contains("on")) return;
+    $("ask").classList.remove("on");
+    $("ask").setAttribute("aria-hidden", "true");
+    var fn = accepted ? askFn.yes : askFn.no;
+    askFn.yes = null;
+    askFn.no = null;
+    if (fn) fn();
+  }
+  $("askYes").onclick = function () { closeAsk(true); };
+  $("askNo").onclick = function () { closeAsk(false); };
+  $("ask").addEventListener("click", function (e) {
+    if (e.target.id === "ask") closeAsk(false);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && $("ask").classList.contains("on")) {
+      e.preventDefault();
+      closeAsk(false);
+    }
+  });
   $("resetBtn").onclick = function () {
-    if (!confirm("Wipe the curb? You'll name a fresh crew at $200 play money.")) return;
-    try { localStorage.removeItem(SD.SAVE_KEY); } catch (e) {}
-    state = null;
-    ui.undo = [];
-    ui.chips = [];
-    ui.setupNames = SD.DEFAULT_NAMES.slice();
-    ui.screen = "setup";
-    if (scene && scene.resetDice) scene.resetDice();
     $("crewSheet").classList.remove("on");
-    render();
+    openAsk({
+      title: "WIPE THE CURB?",
+      lead: "Fresh crew",
+      body: "You'll name a fresh crew at $200 play money. This phone's save is gone.",
+      yes: "Wipe it",
+      no: "Keep playing",
+      danger: true,
+      onYes: function () {
+        try { localStorage.removeItem(SD.SAVE_KEY); } catch (e) {}
+        state = null;
+        ui.undo = [];
+        ui.chips = [];
+        ui.setupNames = SD.DEFAULT_NAMES.slice();
+        ui.screen = "setup";
+        if (scene && scene.resetDice) scene.resetDice();
+        render();
+      }
+    });
   };
   $("setupAdd").onclick = function () {
     if (ui.setupNames.length >= 8) return;
@@ -1192,18 +1251,109 @@ window.__streetStart = function (THREE) {
     buildCube($("cube1"));
     buildCube($("cube2"));
     var faces = [1, 1];
+    var flying = null;
+    var raf = 0;
+    var lastClack = 0;
     function rot(n) {
       return { 1: "rotateX(0) rotateY(0)", 2: "rotateX(-90deg)", 3: "rotateY(-90deg)", 4: "rotateY(90deg)", 5: "rotateX(90deg)", 6: "rotateY(180deg)" }[n];
     }
-    function set(a, b, fly) {
+    function alley() {
+      var el = $("fallback2d").querySelector(".alley");
+      var viewW = window.innerWidth || 360;
+      var viewH = window.innerHeight || 640;
+      var w = Math.min((el && el.clientWidth) || viewW, viewW);
+      var h = Math.min((el && el.clientHeight) || Math.max(220, viewH - 68), viewH);
+      var r = 30;
+      var floor = Math.max(r + 80, h * 0.58);
+      return {
+        w: w,
+        floor: floor,
+        homeY: Math.max(r + 24, h * 0.38),
+        world: {
+          left: r + 12,
+          right: Math.max(r + 20, w - r - 12),
+          top: r + 6,
+          floor: floor,
+          radius: r,
+          gravity: 2400,
+          restitution: 0.55,
+          friction: 0.76
+        }
+      };
+    }
+    function put(el, x, y, transform) {
+      var wrap = el.parentNode;
+      wrap.style.left = (x - 29) + "px";
+      wrap.style.top = (y - 29) + "px";
+      el.style.transform = transform;
+    }
+    function park(a, b, animate) {
+      var dim = alley();
       [$("cube1"), $("cube2")].forEach(function (el, i) {
-        el.style.transition = reduceMotion ? "none" : "transform 0.7s cubic-bezier(.2,.7,.2,1)";
-        el.style.transform = fly
-          ? "translateY(-80px) rotateX(700deg) rotateY(520deg)"
-          : rot(i ? b : a);
+        var wrap = el.parentNode;
+        el.style.animation = "none";
+        wrap.style.transition = animate && !reduceMotion
+          ? "left 0.28s ease, top 0.28s ease"
+          : "none";
+        el.style.transition = animate && !reduceMotion ? "transform 0.22s ease" : "none";
+        put(el, dim.w * 0.5 + (i ? 42 : -42), dim.homeY, rot(i ? b : a));
       });
     }
-    set(1, 1, false);
+    function clack(ms) {
+      var now = performance.now();
+      if (now - lastClack < 80) return;
+      lastClack = now;
+      snd("clack");
+      haptic(ms || 12);
+    }
+    function stopFly() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      flying = null;
+    }
+    function tick(now) {
+      if (!flying) return;
+      var dt = Math.min(0.033, (now - flying.last) / 1000);
+      flying.last = now;
+      flying.t += dt;
+      flying.rxA += flying.spinA[0] * dt;
+      flying.ryA += flying.spinA[1] * dt;
+      flying.rxB += flying.spinB[0] * dt;
+      flying.ryB += flying.spinB[1] * dt;
+      var step = SD.stepDice2D(flying.a, flying.b, flying.world, dt);
+      flying.a = step.a;
+      flying.b = step.b;
+      if (step.hit) {
+        flying.spinA[0] += 220;
+        flying.spinB[1] -= 200;
+        clack(16);
+      } else if (step.wall) {
+        clack(18);
+      } else if (step.floor) {
+        flying.spinA[0] *= 0.7;
+        flying.spinB[0] *= 0.7;
+        clack(10);
+      }
+      $("cube1").style.transition = "none";
+      $("cube2").style.transition = "none";
+      $("cube1").parentNode.style.transition = "none";
+      $("cube2").parentNode.style.transition = "none";
+      put($("cube1"), flying.a.x, flying.a.y, "rotateX(" + flying.rxA + "deg) rotateY(" + flying.ryA + "deg)");
+      put($("cube2"), flying.b.x, flying.b.y, "rotateX(" + flying.rxB + "deg) rotateY(" + flying.ryB + "deg)");
+      var speed = Math.hypot(flying.a.vx, flying.a.vy) + Math.hypot(flying.b.vx, flying.b.vy);
+      if (!flying.settled && (flying.t > 1.85 || (flying.t > 0.72 && speed < 55))) {
+        var d1 = flying.d1;
+        var d2 = flying.d2;
+        var cb = flying.done;
+        stopFly();
+        park(d1, d2, true);
+        setTimeout(cb, 280);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    park(1, 1, false);
+    requestAnimationFrame(function () { if (!flying) park(faces[0], faces[1], false); });
     var box = $("fallback2d");
     var flick2 = { down: false, x: 0, y: 0, t: 0 };
     box.style.touchAction = "none";
@@ -1216,26 +1366,36 @@ window.__streetStart = function (THREE) {
       flick2.down = false;
       alleyFlick(flick2, e);
     });
+    window.addEventListener("resize", function () {
+      if (!flying) park(faces[0], faces[1], false);
+    });
     return {
       sync: function () {},
-      resetDice: function () { faces = [1, 1]; set(1, 1, false); },
+      resetDice: function () { stopFly(); faces = [1, 1]; park(1, 1, false); },
       throw: function (d1, d2, power, done) {
         faces = [d1, d2];
-        if (reduceMotion) { set(d1, d2, false); done(); return; }
-        [$("cube1"), $("cube2")].forEach(function (el) {
-          el.style.transition = "none";
-          el.style.animation = "alley-tumble 0.98s cubic-bezier(.2,.7,.15,1)";
-        });
-        setTimeout(function () { snd("clack"); haptic(18); }, 360);
-        setTimeout(function () { snd("clack"); haptic(12); }, 620);
-        setTimeout(function () {
-          [$("cube1"), $("cube2")].forEach(function (el, i) {
-            el.style.animation = "none";
-            el.style.transition = "transform 0.18s ease";
-            el.style.transform = rot(i ? d2 : d1);
-          });
-          done();
-        }, 1020);
+        stopFly();
+        if (reduceMotion) { park(d1, d2, false); done(); return; }
+        var dim = alley();
+        var pwr = Math.max(0.7, Math.min(1.7, Number(power) || 1));
+        flying = {
+          t: 0,
+          last: performance.now(),
+          d1: d1,
+          d2: d2,
+          done: done,
+          settled: false,
+          world: dim.world,
+          a: { x: dim.w * 0.38, y: dim.homeY + 10, vx: 110 + pwr * 80, vy: -(520 + pwr * 260) },
+          b: { x: dim.w * 0.62, y: dim.homeY + 14, vx: -(115 + pwr * 75), vy: -(500 + pwr * 240) },
+          rxA: 0,
+          ryA: 0,
+          rxB: 0,
+          ryB: 0,
+          spinA: [540 + pwr * 80, 420],
+          spinB: [-480, 390 + pwr * 70]
+        };
+        raf = requestAnimationFrame(tick);
       }
     };
   }
