@@ -579,5 +579,53 @@ test("named crew setup keeps starting stacks and two-player minimum", function (
   assert.strictEqual(SD.removePlayer(s, "p1").ok, false);
 });
 
+test("parseChip only takes whole dollars up to $500", function () {
+  assert.strictEqual(SD.parseChip("").ok, false);
+  assert.strictEqual(SD.parseChip(0).ok, false);
+  assert.strictEqual(SD.parseChip(1.5).ok, false);
+  assert.strictEqual(SD.parseChip(-5).ok, false);
+  assert.strictEqual(SD.parseChip(501).ok, false);
+  assert.strictEqual(SD.parseChip(25).amount, 25);
+});
+
+test("flickPower is forgiving on a short upward swipe and ignores a dead tap", function () {
+  assert.strictEqual(SD.flickPower(0, 10, 200), 0);
+  assert.ok(SD.flickPower(0, 20, 180) > 0);
+  assert.ok(SD.flickPower(16, 10, 80) > 0);
+  assert.ok(SD.flickPower(2, 8, 20) > 0);
+  assert.strictEqual(SD.flickPower(3, 2, 400), 0);
+});
+
+test("collideDice separates overlap and bounces approaching dice", function () {
+  var far = SD.collideDice(
+    { x: -1, y: 0.3, z: 0, vx: 0, vy: 0, vz: -2 },
+    { x: 1, y: 0.3, z: 0, vx: 0, vy: 0, vz: -2 },
+    0.23
+  );
+  assert.strictEqual(far.hit, false);
+  assert.strictEqual(far.separated, false);
+
+  var stuck = SD.collideDice(
+    { x: 0, y: 0.3, z: 0, vx: 0, vy: 0, vz: 0 },
+    { x: 0.1, y: 0.3, z: 0, vx: 0, vy: 0, vz: 0 },
+    0.23
+  );
+  var gap = Math.hypot(stuck.b.x - stuck.a.x, stuck.b.y - stuck.a.y, stuck.b.z - stuck.a.z);
+  assert.ok(stuck.separated);
+  assert.ok(gap >= 0.46 - 1e-6);
+
+  var head = SD.collideDice(
+    { x: -0.2, y: 0.3, z: 0, vx: 2, vy: 0, vz: 0 },
+    { x: 0.2, y: 0.3, z: 0, vx: -2, vy: 0, vz: 0 },
+    0.23
+  );
+  assert.strictEqual(head.hit, true);
+  assert.ok(head.a.vx < 0);
+  assert.ok(head.b.vx > 0);
+  var before = 2 * 2 + (-2) * (-2);
+  var after = head.a.vx * head.a.vx + head.b.vx * head.b.vx;
+  assert.ok(after <= before + 1e-6);
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 process.exit(failed ? 1 : 0);

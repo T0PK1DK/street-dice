@@ -15,12 +15,13 @@ Then visit `http://localhost:4173`.
 The table is a **Three.js** scene (MIT, pinned CDN `three@0.160.1`). If WebGL or the CDN fails, it falls back to a 2D curb. `?2d=1` forces the fallback. `prefers-reduced-motion` skips the tumble and lands the decided faces immediately.
 
 1. Name the crew on a new wall (or after Reset). Each friend starts at $200 play money
-2. Pass the phone — the handoff names who is up and shows their stack
-3. Shooter stacks chips ($1 / $5 / $10 / $20 / custom), undo last / clear, confirm to post the line
-4. Pass to a fader. They fade until the line is covered
-5. Optional **room** tickets (he hits / he don't) and **side** tickets (next 7/11, craps, hardways): offer, pass, cover at true odds
-6. Shooter flicks the alley at the wall, or holds-and-releases the throw bar
-7. Read the roll callout, then the payout card, then pass again
+2. A short how-to overlay covers the four beats; Rules opens it again
+3. Pass the phone — the handoff names who is up and shows their stack
+4. Shooter stacks chips ($1 / $5 / $10 / $20 or the in-game custom pad), undo last / clear, confirm to post the line
+5. Pass to a fader. They fade until the line is covered
+6. Optional **room** tickets (he hits / he don't) and **side** tickets (next 7/11, craps, hardways): offer, pass, cover at true odds
+7. Shooter taps or holds the throw bar, or flicks the alley at the wall
+8. Read the roll callout, then the payout card, then pass again
 
 The roll is decided by the engine *before* the dice move. The animation only lands on those faces.
 

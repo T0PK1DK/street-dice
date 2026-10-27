@@ -175,7 +175,7 @@
   @media (orientation: landscape) and (max-height: 560px) {
     .hud { flex-direction: row; align-items: stretch; }
     .chrome {
-      width: min(228px, 34vw);
+      width: min(196px, 28vw);
       background: linear-gradient(90deg, rgba(0,0,0,0.62), transparent);
       padding-bottom: var(--safe-b);
       min-width: 0;
@@ -194,12 +194,12 @@
     .seat { min-width: 0; width: 100%; min-height: 58px; }
     .grow { display: none; }
     .tray {
-      width: min(46vw, 430px);
+      width: min(40vw, 390px);
       max-height: 100%;
       overflow-y: auto;
       border-top: 0;
       border-left: 1px solid var(--line);
-      padding: 8px 10px calc(var(--safe-b) + 8px);
+      padding: 6px 8px calc(var(--safe-b) + 8px);
     }
     .chips button { min-width: 52px; min-height: 52px; }
     .modes button, .row button { min-height: 48px; }
@@ -213,9 +213,17 @@
       width: min(640px, 96%); margin: 8px 0;
     }
     .setup-list input { min-height: 44px; margin: 0; }
-    #setupGo, #handGo, #payNext { position: sticky; bottom: 6px; }
-    .callout { top: 46%; left: 42%; }
+    #setupGo, #handGo, #payNext, #howtoGo, #padAdd { position: sticky; bottom: 6px; }
+    .callout { top: 46%; left: 44%; }
     .pickgrid { grid-template-columns: 1fr 1fr 1fr; width: min(640px, 100%); }
+    .howto-steps {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      width: min(640px, 96%); text-align: left; margin: 8px 0;
+    }
+    .howto-steps div { padding: 8px 10px; }
+    .pad { width: min(340px, 62vw); gap: 6px; margin: 8px 0; }
+    .pad button { min-height: 46px; font-size: 1.05rem; }
+    .iconrow button { min-width: 44px; padding: 0 8px; }
   }
   @media (min-width: 960px) and (min-height: 700px) {
     header, .banner, .crew { max-width: 1100px; width: calc(100% - 24px); margin-left: auto; margin-right: auto; }
@@ -225,6 +233,19 @@
     }
     .chips button { min-width: 72px; min-height: 60px; }
   }
+  .howto-steps { width: min(440px, 100%); text-align: left; margin: 12px 0; }
+  .howto-steps div {
+    background: #1c1914; border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px 12px; margin: 8px 0; color: var(--muted); line-height: 1.35;
+  }
+  .howto-steps b { color: var(--gold); margin-right: 6px; }
+  .pad {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    width: min(320px, 100%); margin: 12px 0;
+  }
+  .pad button { min-height: 56px; font-size: 1.25rem; font-weight: 800; }
+  .pad button.ghost { font-size: 0.95rem; }
+  #throwGrip { font-weight: 800; letter-spacing: 0.04em; }
   @media (prefers-reduced-motion: reduce) {
     .cube { transition: none !important; animation: none !important; }
     .overlay, .callout, .sheet { transition: none !important; }
@@ -305,6 +326,31 @@
     <button class="primary" id="payNext">KEEP IT MOVING</button>
   </div>
 
+  <div class="overlay" id="howto">
+    <h2>HOW TO PLAY</h2>
+    <div class="big" style="font-size:clamp(1.5rem,6vw,2.3rem)">Four beats</div>
+    <div class="howto-steps">
+      <div><b>1</b> Pass the phone. The name on screen is up.</div>
+      <div><b>2</b> Tap chips, undo or clear, then confirm. Shooter posts the line; friends fade it.</div>
+      <div><b>3</b> Tap or hold the throw bar, or flick the alley at the wall.</div>
+      <div><b>4</b> 7 or 11 pass. 2, 3, or 12 craps. Anything else is the point — hit it before a 7.</div>
+    </div>
+    <p>Play money only. Settle in person. Room tickets (hits / don't) and side tickets (next 7, craps, hardways) are optional.</p>
+    <button class="primary" id="howtoGo">GOT IT</button>
+    <button class="ghost" id="howtoMore" style="margin-top:8px">Full rules</button>
+  </div>
+
+  <div class="overlay" id="pad">
+    <h2>CUSTOM CHIP</h2>
+    <div class="big" id="padAmt">$0</div>
+    <p id="padHint">Whole dollars. Adds to the handful, not the line yet.</p>
+    <div class="pad" id="padGrid"></div>
+    <div class="row" style="width:min(320px,100%)">
+      <button class="ghost" id="padCancel">Back</button>
+      <button class="primary" id="padAdd">Add chip</button>
+    </div>
+  </div>
+
   <div class="sheet" id="rulesSheet">
     <div class="panel">
       <h2>How this curb runs</h2>
@@ -314,7 +360,7 @@
         <li>Come-out: 7 or 11 pass wins even money. 2, 3, or 12 the fade scoops it. Anything else is the point.</li>
         <li>Then hit that point before a 7. Seven-out and the dice walk. Craps lose the line, shooter keeps the rocks.</li>
         <li>Room tickets (he hits / he don't) and side tickets (next 7/11, any craps, hardways): one player offers, another covers at true odds — 4/10 2:1, 5/9 3:2, 6/8 6:5, next 7 5:1, 11 17:1, craps 8:1, hard 4/10 8:1, hard 6/8 10:1.</li>
-        <li>Flick the alley or hold-and-release the throw bar. The number is decided first; the dice just land on it.</li>
+        <li>Tap or hold the throw bar, or flick the alley. The number is decided first; the dice just land on it.</li>
       </ul>
       <button class="primary" data-close="rulesSheet">Got it</button>
     </div>
@@ -361,7 +407,9 @@ window.__streetStart = function (THREE) {
     undo: [],
     charging: false,
     charge: 0,
-    setupNames: ["Dice", "Curb", "Ace", "Wall"]
+    setupNames: ["Dice", "Curb", "Ace", "Wall"],
+    padDigits: "",
+    howtoReturn: "handoff"
   };
   var audio = { ctx: null, muted: false };
   var scene = null;
@@ -552,6 +600,51 @@ window.__streetStart = function (THREE) {
     render();
   }
 
+  function openHowto(then) {
+    ui.howtoReturn = then || ui.screen || "play";
+    ui.screen = "howto";
+    render();
+  }
+
+  function closeHowto() {
+    var next = ui.howtoReturn || "play";
+    if (next === "handoff") {
+      openHandoff(ui.targetId || (state && state.shooterId), ui.reason || "You're up.");
+      return;
+    }
+    ui.screen = next;
+    render();
+  }
+
+  function renderPad() {
+    $("padAmt").textContent = money(ui.padDigits ? parseInt(ui.padDigits, 10) : 0);
+    var p = me();
+    $("padHint").textContent = p
+      ? p.name + " has " + money(p.bankroll) + " in pocket. Whole dollars only."
+      : "Whole dollars. Adds to the handful.";
+  }
+
+  function openPad() {
+    ui.padDigits = "";
+    ui.screen = "pad";
+    render();
+  }
+
+  function padPress(key) {
+    if (key === "del") ui.padDigits = ui.padDigits.slice(0, -1);
+    else if (key === "clr") ui.padDigits = "";
+    else if (ui.padDigits.length < 3) ui.padDigits += key;
+    renderPad();
+  }
+
+  function padAdd() {
+    var parsed = SD.parseChip(ui.padDigits);
+    if (!parsed.ok) { $("padHint").textContent = parsed.error; return; }
+    ui.screen = "play";
+    addChip(parsed.amount);
+    render();
+  }
+
   function openHandoff(id, reason) {
     ui.screen = "handoff";
     ui.targetId = id;
@@ -577,6 +670,12 @@ window.__streetStart = function (THREE) {
 
   function canThisPlayerRoll() {
     return SD.canRoll(state) && state.actingId === state.shooterId && !state.busy;
+  }
+
+  function alleyFlick(start, e) {
+    if (ui.charging || ui.screen !== "play" || !canThisPlayerRoll() || throwing) return;
+    var power = SD.flickPower(e.clientX - start.x, start.y - e.clientY, Date.now() - start.t);
+    if (power) decideAndThrow(power);
   }
 
   function decideAndThrow(power) {
@@ -709,7 +808,7 @@ window.__streetStart = function (THREE) {
       tray.innerHTML = '<div class="who"><strong>' + esc(p.name) + '</strong> <span class="bank">' + money(p.bankroll) + "</span> · shooter</div>" +
         '<div class="hint">Line is faded. Flick the alley or hold the bar. Dice land on a number the curb already picked.</div>' +
         liveTicketsHtml() +
-        '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>' +
+        '<button id="throwGrip">TAP OR HOLD TO THROW — or flick the alley</button>' +
         '<div class="row"><button class="ghost" id="moreBetBtn">Room / side bets</button><button class="ghost" id="passBtn">Pass phone</button></div>';
       bindThrowGrip($("throwGrip"));
       $("moreBetBtn").onclick = function () { ui.showBets = true; renderTray(); };
@@ -751,7 +850,7 @@ window.__streetStart = function (THREE) {
     html += liveTicketsHtml();
     html += '<div class="row"><button id="undoBtn">Undo last</button><button id="clearBtn">Clear</button><button class="primary" id="confirmBtn">Confirm</button><button class="ghost" id="passBtn">Pass phone</button></div>';
     if (canThisPlayerRoll()) {
-      html += '<button id="throwGrip">HOLD TO THROW — or flick the alley at the wall</button>';
+      html += '<button id="throwGrip">TAP OR HOLD TO THROW — or flick the alley</button>';
       html += '<div class="row"><button class="ghost" id="hideBetBtn">Hide chips</button></div>';
     } else if (p.id === state.shooterId && state.line.amount && SD.lineRemaining(state) > 0) {
       html += '<div class="row"><button id="cutBtn">Cut extra</button><button id="pullBtn">Pull line</button></div>';
@@ -767,10 +866,7 @@ window.__streetStart = function (THREE) {
     });
     var custom = document.createElement("button");
     custom.textContent = "Custom";
-    custom.onclick = function () {
-      var v = parseInt(prompt("Custom chip (whole dollars)", "25"), 10);
-      if (v > 0) addChip(v);
-    };
+    custom.onclick = function () { openPad(); };
     $("chipRow").appendChild(custom);
 
     tray.querySelectorAll("[data-mode]").forEach(function (b) {
@@ -839,22 +935,25 @@ window.__streetStart = function (THREE) {
     var startT = 0;
     el.onpointerdown = function (e) {
       e.preventDefault();
+      e.stopPropagation();
       if (!canThisPlayerRoll()) return;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
       startT = Date.now();
       ui.charging = true;
       el.classList.add("hot");
       el.textContent = "HOLD… release to throw";
     };
-    var end = function () {
+    var end = function (e) {
       if (!ui.charging) return;
       ui.charging = false;
       el.classList.remove("hot");
+      if (e && el.releasePointerCapture) {
+        try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
       var held = (Date.now() - startT) / 1000;
-      if (held < 0.18) { el.textContent = "HOLD TO THROW — or flick the alley at the wall"; return; }
-      decideAndThrow(Math.min(1.6, 0.55 + held));
+      decideAndThrow(Math.min(1.6, 0.7 + Math.max(0, held)));
     };
     el.onpointerup = end;
-    el.onpointerleave = end;
     el.onpointercancel = end;
   }
 
@@ -893,7 +992,7 @@ window.__streetStart = function (THREE) {
       thrower.style.gridColumn = "1 / -1";
       thrower.textContent = "Pass to " + SD.playerName(state, state.shooterId) + " to throw";
       thrower.onclick = function () {
-        openHandoff(state.shooterId, "Line's faded. Flick it at the wall.");
+        openHandoff(state.shooterId, "Line's faded. Tap, hold, or flick it at the wall.");
       };
       grid.appendChild(thrower);
     }
@@ -964,12 +1063,16 @@ window.__streetStart = function (THREE) {
     ui.chips = [];
     save();
     if (scene && scene.resetDice) scene.resetDice();
-    openHandoff(state.shooterId, names[0] + " has the rocks. Post a line.");
+    ui.targetId = state.shooterId;
+    ui.reason = names[0] + " has the rocks. Post a line.";
+    openHowto("handoff");
   }
 
   function render() {
     $("muteBtn").textContent = audio.muted ? "🔇" : "🔊";
     $("setup").className = "overlay" + (ui.screen === "setup" ? " on" : "");
+    $("howto").className = "overlay" + (ui.screen === "howto" ? " on" : "");
+    $("pad").className = "overlay" + (ui.screen === "pad" ? " on" : "");
     if (ui.screen === "setup") {
       $("handoff").className = "overlay";
       $("picker").className = "overlay";
@@ -980,6 +1083,20 @@ window.__streetStart = function (THREE) {
       $("phaseDetail").textContent = "Name the crew, then pass the phone.";
       $("hud").style.visibility = "hidden";
       renderSetup();
+      return;
+    }
+    if (ui.screen === "howto") {
+      $("handoff").className = "overlay";
+      $("picker").className = "overlay";
+      $("payout").className = "overlay";
+      $("hud").style.visibility = "hidden";
+      return;
+    }
+    if (ui.screen === "pad") {
+      $("hud").style.visibility = "visible";
+      renderBanner();
+      renderCrewStrip();
+      renderPad();
       return;
     }
     $("hud").style.visibility = (ui.screen === "handoff" || ui.screen === "pick" || ui.screen === "payout") ? "hidden" : "visible";
@@ -1009,7 +1126,21 @@ window.__streetStart = function (THREE) {
     if (state) apply(SD.setMuted(state, audio.muted));
     else { $("muteBtn").textContent = audio.muted ? "🔇" : "🔊"; }
   };
-  $("rulesBtn").onclick = function () { $("rulesSheet").classList.add("on"); };
+  $("rulesBtn").onclick = function () { openHowto(ui.screen === "setup" ? "setup" : (ui.screen || "play")); };
+  $("howtoGo").onclick = closeHowto;
+  $("howtoMore").onclick = function () { $("rulesSheet").classList.add("on"); };
+  $("padCancel").onclick = function () { ui.screen = "play"; render(); };
+  $("padAdd").onclick = padAdd;
+  (function buildPad() {
+    var grid = $("padGrid");
+    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "clr", "0", "del"].forEach(function (key) {
+      var b = document.createElement("button");
+      b.textContent = key === "clr" ? "Clear" : key === "del" ? "⌫" : key;
+      if (key === "clr" || key === "del") b.className = "ghost";
+      b.onclick = function () { padPress(key); };
+      grid.appendChild(b);
+    });
+  })();
   $("crewBtn").onclick = function () {
     if (!state) return;
     renderCrewSheet();
@@ -1074,19 +1205,16 @@ window.__streetStart = function (THREE) {
     }
     set(1, 1, false);
     var box = $("fallback2d");
-    var flick2 = { down: false, y: 0, t: 0 };
+    var flick2 = { down: false, x: 0, y: 0, t: 0 };
     box.style.touchAction = "none";
     box.addEventListener("pointerdown", function (e) {
       if (ui.screen !== "play") return;
-      flick2.down = true; flick2.y = e.clientY; flick2.t = Date.now();
+      flick2.down = true; flick2.x = e.clientX; flick2.y = e.clientY; flick2.t = Date.now();
     });
     window.addEventListener("pointerup", function (e) {
       if (!flick2.down) return;
       flick2.down = false;
-      if (ui.screen !== "play" || !canThisPlayerRoll()) return;
-      var dy = flick2.y - e.clientY;
-      var dt = Math.max(16, Date.now() - flick2.t);
-      if (dy > 48) decideAndThrow(Math.min(1.7, dy / 180 + 400 / dt));
+      alleyFlick(flick2, e);
     });
     return {
       sync: function () {},
@@ -1333,7 +1461,7 @@ window.__streetStart = function (THREE) {
       return {
         mesh: mesh,
         pos: mesh.position.clone(),
-        vel: new THREE.Vector3((Math.random() - 0.5) * 0.55, 2.55 + pwr * 0.55, -8.5 * pwr - 0.35),
+        vel: new THREE.Vector3((slot ? -0.45 : 0.45) + (Math.random() - 0.5) * 0.32, 2.55 + pwr * 0.55, -8.5 * pwr - 0.35),
         spin: new THREE.Vector3((Math.random() - 0.5) * 20, (Math.random() - 0.5) * 18, (Math.random() - 0.5) * 16),
         face: face,
         twist: twist,
@@ -1394,6 +1522,28 @@ window.__streetStart = function (THREE) {
         if (d.pos.x < -2.3) { d.pos.x = -2.3; d.vel.x *= -0.5; }
         d.mesh.position.copy(d.pos);
       });
+      if (!flying.settled) {
+        var A = flying.dice[0];
+        var B = flying.dice[1];
+        var bump = SD.collideDice(
+          { x: A.pos.x, y: A.pos.y, z: A.pos.z, vx: A.vel.x, vy: A.vel.y, vz: A.vel.z },
+          { x: B.pos.x, y: B.pos.y, z: B.pos.z, vx: B.vel.x, vy: B.vel.y, vz: B.vel.z },
+          0.23
+        );
+        A.pos.set(bump.a.x, bump.a.y, bump.a.z);
+        B.pos.set(bump.b.x, bump.b.y, bump.b.z);
+        A.vel.set(bump.a.vx, bump.a.vy, bump.a.vz);
+        B.vel.set(bump.b.vx, bump.b.vy, bump.b.vz);
+        A.mesh.position.copy(A.pos);
+        B.mesh.position.copy(B.pos);
+        if (bump.hit) {
+          A.spin.x += 6;
+          B.spin.z -= 6;
+          snd("clack");
+          haptic(14);
+          camKick = Math.max(camKick, 0.1);
+        }
+      }
       var speed = flying.dice[0].vel.length() + flying.dice[1].vel.length();
       if (!flying.settled && (flying.t > 1.95 || (slow && speed < 0.95 && flying.dice[0].bounced))) {
         flying.settled = true;
@@ -1416,19 +1566,16 @@ window.__streetStart = function (THREE) {
       }
     }
 
-    var flick = { down: false, y: 0, t: 0 };
+    var flick = { down: false, x: 0, y: 0, t: 0 };
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", function (e) {
       if (ui.screen !== "play") return;
-      flick.down = true; flick.y = e.clientY; flick.t = Date.now();
+      flick.down = true; flick.x = e.clientX; flick.y = e.clientY; flick.t = Date.now();
     });
     window.addEventListener("pointerup", function (e) {
       if (!flick.down) return;
       flick.down = false;
-      if (ui.screen !== "play" || !canThisPlayerRoll()) return;
-      var dy = flick.y - e.clientY;
-      var dt = Math.max(16, Date.now() - flick.t);
-      if (dy > 48) decideAndThrow(Math.min(1.7, dy / 180 + 400 / dt));
+      alleyFlick(flick, e);
     });
 
     function sync(st) {

@@ -1025,6 +1025,71 @@
     return out;
   }
 
+  function parseChip(n) {
+    var x = intAmt(n);
+    if (x === null || x <= 0) return { ok: false, error: "Need a whole-dollar chip." };
+    if (x > 500) return { ok: false, error: "Keep a custom chip at $500 or under." };
+    return { ok: true, amount: x };
+  }
+
+  function flickPower(dx, dy, dt) {
+    dt = Math.max(16, Number(dt) || 16);
+    dx = Number(dx) || 0;
+    dy = Number(dy) || 0;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var speed = dist / dt;
+    if (dy >= 16 || (dist >= 20 && dy >= 8) || (speed >= 0.2 && dy > 4)) {
+      return Math.min(1.7, 0.55 + dy / 220 + 280 / dt);
+    }
+    return 0;
+  }
+
+  function collideDice(a, b, radius) {
+    radius = radius == null ? 0.23 : radius;
+    var dx = b.x - a.x;
+    var dy = b.y - a.y;
+    var dz = b.z - a.z;
+    var dist2 = dx * dx + dy * dy + dz * dz;
+    var min = radius * 2;
+    var outA = { x: a.x, y: a.y, z: a.z, vx: a.vx, vy: a.vy, vz: a.vz };
+    var outB = { x: b.x, y: b.y, z: b.z, vx: b.vx, vy: b.vy, vz: b.vz };
+    if (dist2 >= min * min) return { a: outA, b: outB, hit: false, separated: false };
+    var dist = Math.sqrt(dist2);
+    var nx;
+    var ny;
+    var nz;
+    if (dist < 1e-6) {
+      nx = 1;
+      ny = 0;
+      nz = 0;
+      dist = 0;
+    } else {
+      nx = dx / dist;
+      ny = dy / dist;
+      nz = dz / dist;
+    }
+    var overlap = min - dist;
+    outA.x -= nx * overlap * 0.5;
+    outA.y -= ny * overlap * 0.5;
+    outA.z -= nz * overlap * 0.5;
+    outB.x += nx * overlap * 0.5;
+    outB.y += ny * overlap * 0.5;
+    outB.z += nz * overlap * 0.5;
+    var rvn = (outB.vx - outA.vx) * nx + (outB.vy - outA.vy) * ny + (outB.vz - outA.vz) * nz;
+    var hit = false;
+    if (rvn < 0) {
+      var j = -(1 + 0.58) * rvn / 2;
+      outA.vx -= j * nx;
+      outA.vy -= j * ny;
+      outA.vz -= j * nz;
+      outB.vx += j * nx;
+      outB.vy += j * ny;
+      outB.vz += j * nz;
+      hit = true;
+    }
+    return { a: outA, b: outB, hit: hit, separated: true, overlap: overlap };
+  }
+
   function validateState(state) {
     if (bankSum(state) < 0) return "Negative bankroll.";
     for (var i = 0; i < state.players.length; i++) {
@@ -1089,6 +1154,9 @@
     validateState: validateState,
     isCraps: isCraps,
     isNatural: isNatural,
-    isHard: isHard
+    isHard: isHard,
+    parseChip: parseChip,
+    flickPower: flickPower,
+    collideDice: collideDice
   };
 });
