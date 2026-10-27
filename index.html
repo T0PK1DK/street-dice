@@ -48,8 +48,8 @@
   #fallback2d .alley { position: relative; height: calc(100% - 68px); }
   #fallback2d .curb { position: absolute; bottom: 28%; left: 0; right: 0; height: 18px; background: repeating-linear-gradient(90deg, #cfc6b3 0 18px, #111 18px 28px); }
   #fallback2d .dice-box { position: absolute; inset: 0; perspective: 600px; pointer-events: none; }
-  .cube { width: 58px; height: 58px; position: absolute; left: 0; top: 0; transform-style: preserve-3d; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.45)); }
-  .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4; }
+  .cube { width: 58px; height: 58px; position: absolute; left: 0; top: 0; transform-style: preserve-3d; }
+  .face { position: absolute; inset: 0; background: #f4efe4; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 7px; box-shadow: inset 0 0 0 2px #d7cbb4, 0 10px 16px rgba(0,0,0,0.38); }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #2a2218; margin: auto; }
   .f1 { transform: rotateY(0) translateZ(29px); }
   .f6 { transform: rotateY(180deg) translateZ(29px); }
@@ -1251,19 +1251,22 @@ window.__streetStart = function (THREE) {
     }
     function alley() {
       var el = $("fallback2d").querySelector(".alley");
-      var w = (el && el.clientWidth) || 360;
+      var rect = el ? el.getBoundingClientRect() : { top: 68 };
+      var w = (el && el.clientWidth) || window.innerWidth || 360;
       var h = (el && el.clientHeight) || 320;
       var r = 30;
-      var curbTop = h * 0.72 - 18;
-      var floor = Math.max(r + 24, curbTop - r);
+      var viewH = window.innerHeight || h;
+      var visibleTop = Math.max(r + 8, viewH * 0.28 - rect.top);
+      var visibleBot = Math.min(h - r - 8, viewH * 0.58 - rect.top);
+      var floor = Math.max(visibleTop + 48, visibleBot);
       return {
         w: w,
         floor: floor,
-        homeY: Math.min(floor, Math.max(h * 0.32, r + 20)),
+        homeY: (visibleTop + floor) * 0.5,
         world: {
           left: r + 12,
           right: Math.max(r + 20, w - r - 12),
-          top: r + 8,
+          top: Math.max(r + 6, 10 - rect.top),
           floor: floor,
           radius: r,
           gravity: 2400,
@@ -1339,6 +1342,7 @@ window.__streetStart = function (THREE) {
       raf = requestAnimationFrame(tick);
     }
     park(1, 1, false);
+    requestAnimationFrame(function () { if (!flying) park(faces[0], faces[1], false); });
     var box = $("fallback2d");
     var flick2 = { down: false, x: 0, y: 0, t: 0 };
     box.style.touchAction = "none";
