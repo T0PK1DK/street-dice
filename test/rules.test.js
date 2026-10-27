@@ -627,5 +627,45 @@ test("collideDice separates overlap and bounces approaching dice", function () {
   assert.ok(after <= before + 1e-6);
 });
 
+test("stepDice2D keeps inbound dice apart and bounces them with collideDice", function () {
+  var world = { left: 30, right: 370, top: 30, floor: 270, radius: 30, gravity: 0, restitution: 0.55, friction: 1 };
+  var cur = {
+    a: { x: 140, y: 120, vx: 180, vy: 0 },
+    b: { x: 220, y: 120, vx: -180, vy: 0 }
+  };
+  var hits = 0;
+  for (var i = 0; i < 90; i++) {
+    cur = SD.stepDice2D(cur.a, cur.b, world, 1 / 60);
+    if (cur.hit) hits += 1;
+    var gap = Math.hypot(cur.b.x - cur.a.x, cur.b.y - cur.a.y);
+    assert.ok(gap >= 60 - 1e-6);
+  }
+  assert.ok(hits >= 1);
+  assert.ok(cur.a.vx < cur.b.vx);
+});
+
+test("stepDice2D bounces a die off the curb and the wall", function () {
+  var world = { left: 30, right: 370, top: 30, floor: 200, radius: 30, gravity: 0, restitution: 0.55, friction: 0.8 };
+  var floorHit = SD.stepDice2D(
+    { x: 100, y: 196, vx: 0, vy: 160 },
+    { x: 300, y: 80, vx: 0, vy: 0 },
+    world,
+    1 / 30
+  );
+  assert.ok(floorHit.floor);
+  assert.ok(floorHit.a.y <= 200 + 1e-6);
+  assert.ok(floorHit.a.vy <= 0);
+
+  var wallHit = SD.stepDice2D(
+    { x: 34, y: 100, vx: -140, vy: 0 },
+    { x: 300, y: 80, vx: 0, vy: 0 },
+    world,
+    1 / 30
+  );
+  assert.ok(wallHit.wall);
+  assert.ok(wallHit.a.x >= 30 - 1e-6);
+  assert.ok(wallHit.a.vx >= 0);
+});
+
 console.log("\n" + passed + " passed, " + failed + " failed");
 process.exit(failed ? 1 : 0);

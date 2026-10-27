@@ -12,7 +12,7 @@ python3 -m http.server 4173
 
 Then visit `http://localhost:4173`.
 
-The table is a **Three.js** scene (MIT, pinned CDN `three@0.160.1`). If WebGL or the CDN fails, it falls back to a 2D curb. `?2d=1` forces the fallback. `prefers-reduced-motion` skips the tumble and lands the decided faces immediately.
+The table is a **Three.js** scene (MIT, pinned CDN `three@0.160.1`). If WebGL or the CDN fails, it falls back to a 2D curb that uses the same die-to-die collision as the 3D table. `?2d=1` forces the fallback. `prefers-reduced-motion` skips the tumble and lands the decided faces immediately.
 
 1. Name the crew on a new wall (or after Reset). Each friend starts at $200 play money
 2. A short how-to overlay covers the four beats; Rules opens it again
@@ -33,7 +33,7 @@ Come-out: 7 or 11 wins the line, 2/3/12 the fade scoops it, anything else is the
 - Next-roll 7 is 5:1, 11 is 17:1, any craps is 8:1
 - Hard 4/10 is 8:1, hard 6/8 is 10:1
 
-Crew and bankrolls save in this browser (`street-dice-v2`). Reset in Crew returns to the named-crew setup. Landscape phones put the crew on the left and the chip tray on the right.
+Crew and bankrolls save in this browser (`street-dice-v2`). Reset in Crew asks in-game first, then returns to the named-crew setup. Landscape phones put the crew on the left and the chip tray on the right.
 
 ## Tests
 
